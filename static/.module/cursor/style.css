@@ -1,0 +1,24 @@
+body .cursor {
+  pointer-events: none;
+}
+
+body .cursor__ball {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  mix-blend-mode: difference;
+  z-index: 1000;
+
+  font-family: monospace !important;
+  font-size: 13px !important;
+}
+
+body .cursor__ball circle {
+  fill: #f7f8fa;
+}
+
+.disabled {
+  opacity: 0.25;
+  pointer-events: none;
+}

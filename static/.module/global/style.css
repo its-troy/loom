@@ -1,0 +1,25 @@
+:root {
+    --dark: #22223B;
+    --light: #F2E9E4;
+}
+
+* {
+    font-family: "Roboto Mono", "Roboto Mono", "Vazirmatn", monospace;
+    user-select: none;
+    cursor: none;
+    color: var(--dark);
+    margin: 0;
+}
+
+body {
+    display: flex;
+    height: 100vh;
+    font-size: 2em;
+    background: var(--light);
+}
+
+.button {
+    border-bottom: 2px solid var(--dark);
+    padding: 10px 0;
+    margin-top: 25px;
+}

@@ -1,0 +1,47 @@
+.main {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#input_container {
+    display: grid;
+    justify-items: center;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+#input {
+    background: none;
+    border: none;
+    outline: none;
+    
+    caret-color: transparent;
+    field-sizing: content;
+
+    font-size: 4rem;
+    text-align: center;
+    pointer-events: none;
+}
+
+#input::placeholder {
+    color: var(--dark);
+    opacity: 0.125;
+}
+
+.next_button {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    
+    margin-top: 25px;
+    padding: 10px 1em;
+    border-radius: 100px;
+    background-color: var(--dark);
+    color: var(--light);
+    text-decoration: unset;
+    transition: opacity 1s;
+}

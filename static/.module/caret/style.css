@@ -1,0 +1,21 @@
+#caret {
+    background: var(--dark);
+    position: absolute;
+    height: 4.7rem;
+    width: 2px;
+    translate: -1px;
+    transition: translate 0.2s;
+    animation: caret 1s ease-in-out infinite;
+}
+
+@keyframes caret {
+  from {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

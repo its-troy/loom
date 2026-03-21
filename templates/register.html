@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>loom</title>
+
+    <!-- Register -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='register/style.css') }}">
+    <script src="{{ url_for('static', filename='register/script.js') }}" defer></script>
+
+    <!-- Global -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='.module/global/style.css') }}">
+    <script src="{{ url_for('static', filename='.module/global/script.js') }}"></script>
+
+    <!-- Cursor -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='.module/cursor/style.css') }}">
+    <script src="{{ url_for('static', filename='.module/cursor/script.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js"></script>
+
+    <!-- Caret -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='.module/caret/style.css') }}">
+    <script src="{{ url_for('static', filename='.module/caret/script.js') }}"></script>
+</head>
+
+<body>
+    <div class="cursor" hidden>
+        <div class="cursor__ball cursor__ball--big ">
+            <svg height="30" width="30">
+                <circle cx="15" cy="15" r="12" stroke-width="0"></circle>
+            </svg>
+        </div>
+
+        <div class="cursor__ball cursor__ball--small">
+            <svg height="10" width="10">
+                <circle cx="5" cy="5" r="4" stroke-width="0"></circle>
+            </svg>
+        </div>
+    </div>
+
+    <form class="main" id="multi-step-form" method="POST">
+        <p id="question_text">What is your skill level?</p>
+        <div id="input_container">
+            <input 
+                class="hoverable" 
+                id="input" 
+                type="text" 
+                placeholder="B2, beginner,..." 
+                maxlength="40" 
+                autocomplete="off"
+                required
+            >
+            <div id="caret"></div>
+        </div>
+        <input type="hidden" name="skill_level" id="hidden_skill">
+        <input type="hidden" name="interests" id="hidden_interests">
+    </form>
+</body>
+
+</html>

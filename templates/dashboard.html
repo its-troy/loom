@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>loom</title>
+  <style>
+    :root {
+      --dark: #22223B;
+      --light: #F2E9E4;
+      --accent1: #4A4E69;
+      --accent2: #9A8C98;
+      --accent3: #C9ADA7;
+      --card-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px;
+      --font: "Roboto Mono", "Vazirmatn", monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font);
+      background: var(--light);
+      color: var(--dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(34,34,59,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34,34,59,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    nav {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 40px;
+      border-bottom: 1px solid rgba(34,34,59,0.1);
+      background: rgba(242,233,228,0.8);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-logo-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--dark);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      color: var(--accent1);
+    }
+
+    .nav-level {
+      background: var(--dark);
+      color: var(--light);
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 40px 40px 80px;
+    }
+
+    .greeting { margin-bottom: 36px; }
+
+    .greeting-sub {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 6px;
+    }
+
+    .greeting-main {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--dark);
+      line-height: 1.1;
+    }
+
+    .greeting-main span {
+      position: relative;
+      display: inline-block;
+    }
+
+    .greeting-main span::after {
+      content: '';
+      position: absolute;
+      bottom: 2px; left: 0; right: 0;
+      height: 3px;
+      background: var(--dark);
+      transform: scaleX(0);
+      transform-origin: left;
+      animation: underline-in 0.6s 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+    }
+
+    @keyframes underline-in { to { transform: scaleX(1); } }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 20px;
+    }
+
+    /* ── CARD BASE ── */
+    .card {
+      background: rgba(242,233,228,0.92);
+      border: 1px solid rgba(34,34,59,0.1);
+      box-shadow: var(--card-shadow);
+      padding: 28px;
+      transform-style: preserve-3d;
+      will-change: transform;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 60%);
+      pointer-events: none;
+    }
+
+    .card-label {
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-label::before {
+      content: '';
+      width: 16px; height: 1px;
+      background: var(--accent2);
+    }
+
+    /* ── STREAK CARD ── */
+    .card-streak { grid-column: span 3; }
+
+    .streak-number {
+      font-size: 4.5rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--dark);
+      letter-spacing: -0.03em;
+    }
+
+    .streak-number sup {
+      font-size: 1.2rem;
+      font-weight: 400;
+      vertical-align: super;
+      color: var(--accent1);
+    }
+
+    .streak-sub {
+      font-size: 0.72rem;
+      color: var(--accent2);
+      margin-top: 6px;
+      margin-bottom: 20px;
+    }
+
+    .streak-dots {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .streak-dot {
+      width: 20px; height: 20px;
+      border: 1.5px solid rgba(34,34,59,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5rem;
+      color: var(--accent2);
+    }
+
+    .streak-dot.active {
+      background: var(--dark);
+      border-color: var(--dark);
+      color: var(--light);
+    }
+
+    .streak-dot.today {
+      background: transparent;
+      border-color: var(--dark);
+      border-width: 2px;
+      color: var(--dark);
+      font-weight: 700;
+    }
+
+    .streak-xp {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .xp-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.65rem;
+      color: var(--accent1);
+    }
+
+    .xp-bar {
+      height: 4px;
+      background: rgba(34,34,59,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .xp-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: var(--dark);
+      transform-origin: left;
+      animation: grow-bar 1s 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    @keyframes grow-bar {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+
+    /* ── TOWER DEFENSE CARD ── */
+    .card-tower { grid-column: span 5; }
+
+    .tower-preview {
+      position: relative;
+      height: 140px;
+      background: rgba(34,34,59,0.04);
+      border: 1px solid rgba(34,34,59,0.08);
+      margin-bottom: 18px;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .tower-path {
+      position: absolute;
+      bottom: 20px; left: 0; right: 0;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, var(--accent2) 0, var(--accent2) 6px, transparent 6px, transparent 12px);
+      opacity: 0.4;
+    }
+
+    .tower-el {
+      position: absolute;
+      bottom: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .tower-body { width: 16px; background: var(--dark); border-radius: 2px 2px 0 0; }
+
+    .tower-top {
+      width: 22px; height: 6px;
+      background: var(--dark);
+      display: flex; gap: 3px;
+      align-items: flex-start;
+      padding: 0 1px;
+    }
+
+    .tower-top span { flex: 1; height: 3px; background: var(--light); margin-top: 1px; }
+
+    .enemy {
+      position: absolute; bottom: 26px;
+      font-size: 1rem;
+      animation: march 4s linear infinite;
+    }
+
+    @keyframes march { from { left: 100%; } to { left: -10%; } }
+
+    .wave-badge {
+      position: absolute; top: 10px; right: 10px;
+      font-size: 0.6rem; font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--light); background: var(--dark);
+      padding: 3px 8px;
+    }
+
+    .hp-bar-wrap { position: absolute; top: 10px; left: 10px; width: 80px; }
+    .hp-label { font-size: 0.55rem; color: var(--accent2); letter-spacing: 0.1em; margin-bottom: 3px; }
+    .hp-bar { height: 3px; background: rgba(34,34,59,0.1); }
+    .hp-fill { height: 100%; background: var(--dark); }
+
+    .tower-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 18px;
+    }
+
+    .stat-item { text-align: center; }
+    .stat-val { font-size: 1.3rem; font-weight: 700; color: var(--dark); display: block; }
+    .stat-key { font-size: 0.58rem; letter-spacing: 0.1em; color: var(--accent2); text-transform: uppercase; }
+
+    .btn-play {
+      width: 100%; padding: 12px;
+      background: var(--dark); color: var(--light);
+      border: none; font-family: var(--font);
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+
+    .btn-play:hover { background: var(--accent1); }
+    .btn-play:active { transform: scale(0.98); }
+
+    .btn-play-icon {
+      width: 0; height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 8px solid var(--light);
+    }
+
+    /* ── TODAY'S WORDS CARD ── */
+    .card-words { grid-column: span 4; }
+
+    .word-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .word-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px; padding: 12px 14px;
+      background: rgba(34,34,59,0.03);
+      border: 1px solid rgba(34,34,59,0.07);
+      transition: background 0.15s; cursor: pointer;
+    }
+
+    .word-item:hover { background: rgba(34,34,59,0.07); }
+    .word-main { font-size: 0.88rem; font-weight: 600; color: var(--dark); letter-spacing: 0.02em; }
+    .word-def { font-size: 0.62rem; color: var(--accent2); margin-top: 2px; font-style: italic; }
+
+    .word-tag {
+      font-size: 0.55rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 3px 7px;
+      border: 1px solid rgba(34,34,59,0.2);
+      color: var(--accent1); white-space: nowrap;
+    }
+
+    /* ── CHART CARD ── */
+    .card-chart { grid-column: span 7; }
+
+    .chart-meta { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
+    .chart-total { font-size: 2rem; font-weight: 700; color: var(--dark); line-height: 1; }
+    .chart-total-label { font-size: 0.62rem; letter-spacing: 0.1em; color: var(--accent2); }
+    .chart-wrap { width: 100%; position: relative; }
+    .chart-wrap svg { width: 100%; height: 160px; overflow: visible; }
+    .chart-x-labels { display: flex; justify-content: space-between; margin-top: 6px; }
+    .chart-x-label { font-size: 0.56rem; letter-spacing: 0.08em; color: var(--accent2); text-transform: uppercase; }
+
+    /* ── MISTAKES CARD ── */
+    .card-mistakes { grid-column: span 5; }
+
+    .mistake-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .mistake-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 11px 13px;
+      background: rgba(34,34,59,0.03);
+      border-left: 2px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .mistake-item:hover { border-left-color: var(--dark); }
+    .mistake-q { font-size: 0.72rem; color: var(--dark); line-height: 1.4; margin-bottom: 5px; }
+    .mistake-a { font-size: 0.62rem; color: var(--accent2); font-style: italic; }
+    .mistake-a strong { font-style: normal; color: var(--accent1); }
+
+    /* ── QUICK STATS BAR ── */
+    .card-statsbar {
+      grid-column: span 12;
+      display: flex; gap: 0; padding: 0; overflow: hidden;
+    }
+
+    .stat-bar-item {
+      flex: 1; padding: 18px 20px;
+      border-right: 1px solid rgba(34,34,59,0.1);
+      display: flex; align-items: center; gap: 14px;
+    }
+
+    .stat-bar-item:last-child { border-right: none; }
+    .stat-bar-icon { font-size: 1.3rem; opacity: 0.7; }
+    .stat-bar-val { font-size: 1.2rem; font-weight: 700; color: var(--dark); line-height: 1; }
+    .stat-bar-key { font-size: 0.58rem; letter-spacing: 0.12em; color: var(--accent2); text-transform: uppercase; margin-top: 3px; }
+
+    /* ── CARD REVEAL ANIMATION ── */
+    @keyframes card-in {
+      from { opacity: 0; translate: 0 20px; }
+      to   { opacity: 1; translate: 0 0px;  }
+    }
+
+    .card { animation: card-in 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.12s; }
+    .card:nth-child(3) { animation-delay: 0.18s; }
+    .card:nth-child(4) { animation-delay: 0.08s; }
+    .card:nth-child(5) { animation-delay: 0.14s; }
+    .card:nth-child(6) { animation-delay: 0.22s; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--accent3); }
+
+    @media (max-width: 900px) {
+      .card-streak, .card-tower, .card-words,
+      .card-chart, .card-mistakes { grid-column: span 12; }
+      main { padding: 24px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-dot"></div>
+    LexiCore
+  </div>
+  <div class="nav-right">
+    <span id="navDate"></span>
+    <span class="nav-level" id="navLevel">—</span>
+    <span id="navName">—</span>
+  </div>
+</nav>
+
+<main>
+  <div class="greeting">
+    <div class="greeting-sub" id="sessionLabel">// session_—</div>
+    <div class="greeting-main" id="greetingMain">—</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- QUICK STATS BAR -->
+    <div class="card card-statsbar">
+      <div class="stat-bar-item">
+        <div class="stat-bar-icon">🔥</div>
+        <div class="stat-bar-info">
+          <div class="stat-bar-val" id="statStreak">—</div>
+          <div class="stat-bar-key">Day Streak</div>
+        </div>
+      </div>
+      <div class="stat-bar-item">
+        <div class="stat-bar-icon">📖</div>
+        <div class="stat-bar-info">
+          <div class="stat-bar-val" id="statWords">—</div>
+          <div class="stat-bar-key">Words Learned</div>
+        </div>
+      </div>
+      <div class="stat-bar-item">
+        <div class="stat-bar-icon">⚡</div>
+        <div class="stat-bar-info">
+          <div class="stat-bar-val" id="statXP">—</div>
+          <div class="stat-bar-key">Total XP</div>
+        </div>
+      </div>
+      <div class="stat-bar-item">
+        <div class="stat-bar-icon">🎯</div>
+        <div class="stat-bar-info">
+          <div class="stat-bar-val" id="statAccuracy">—</div>
+          <div class="stat-bar-key">Accuracy</div>
+        </div>
+      </div>
+      <div class="stat-bar-item">
+        <div class="stat-bar-icon">🏰</div>
+        <div class="stat-bar-info">
+          <div class="stat-bar-val" id="statWave">—</div>
+          <div class="stat-bar-key">Tower Progress</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STREAK CARD -->
+    <div class="card card-streak">
+      <div class="card-label">Streak</div>
+      <div class="streak-number" id="streakNumber">—</div>
+      <div class="streak-sub" id="streakBest">Personal best: — days</div>
+      <div class="streak-dots" id="streakDots"></div>
+      <div class="streak-xp">
+        <div class="xp-label">
+          <span>Daily XP</span>
+          <span id="xpLabel">— / —</span>
+        </div>
+        <div class="xp-bar">
+          <div class="xp-fill" id="xpFill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOWER DEFENSE CARD -->
+    <div class="card card-tower">
+      <div class="card-label">Tower Defense</div>
+      <div class="tower-preview">
+        <div class="wave-badge" id="waveBadge">WAVE — / —</div>
+        <div class="hp-bar-wrap">
+          <div class="hp-label">CASTLE HP</div>
+          <div class="hp-bar"><div class="hp-fill" id="castleHpFill" style="width:0%"></div></div>
+        </div>
+        <div class="tower-path"></div>
+        <div class="tower-el" style="left:15%">
+          <div class="tower-top"><span></span><span></span><span></span></div>
+          <div class="tower-body" style="height:36px"></div>
+        </div>
+        <div class="tower-el" style="left:35%">
+          <div class="tower-top"><span></span><span></span><span></span></div>
+          <div class="tower-body" style="height:28px"></div>
+        </div>
+        <div class="tower-el" style="left:58%">
+          <div class="tower-top"><span></span><span></span><span></span></div>
+          <div class="tower-body" style="height:42px"></div>
+        </div>
+        <div class="tower-el" style="left:78%">
+          <div class="tower-top"><span></span><span></span><span></span></div>
+          <div class="tower-body" style="height:32px"></div>
+        </div>
+        <div class="tower-el" style="right:8px">
+          <div class="tower-top" style="width:32px"><span></span><span></span><span></span><span></span></div>
+          <div class="tower-body" style="height:54px;width:26px"></div>
+        </div>
+        <div class="enemy" style="animation-duration:5s;animation-delay:-1s">👾</div>
+        <div class="enemy" style="animation-duration:7s;animation-delay:-3s;bottom:28px;font-size:0.75rem">👾</div>
+      </div>
+      <div class="tower-stats">
+        <div class="stat-item">
+          <span class="stat-val" id="towerBuilt">—</span>
+          <span class="stat-key">Towers</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val" id="towerEnemies">—</span>
+          <span class="stat-key">Enemies Def.</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val" id="towerHp">—</span>
+          <span class="stat-key">HP Left</span>
+        </div>
+      </div>
+      <button class="btn-play" id="towerBtn">
+        <div class="btn-play-icon"></div>
+        Continue — Wave —
+      </button>
+    </div>
+
+    <!-- TODAY'S WORDS -->
+    <div class="card card-words">
+      <div class="card-label">Today's Words</div>
+      <div class="word-list" id="wordList">
+        <div style="font-size:0.65rem;color:var(--accent2)">Loading…</div>
+      </div>
+    </div>
+
+    <!-- CORRECT ANSWERS CHART -->
+    <div class="card card-chart">
+      <div class="card-label">Correct Answers / Day</div>
+      <div class="chart-meta">
+        <div class="chart-total" id="chartTotal">—</div>
+        <div class="chart-total-label">total this month</div>
+      </div>
+      <div class="chart-wrap">
+        <svg id="lineChart" viewBox="0 0 560 160" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="chart-x-labels" id="chartLabels"></div>
+    </div>
+
+    <!-- RECENT MISTAKES -->
+    <div class="card card-mistakes">
+      <div class="card-label">Recent Mistakes</div>
+      <div class="mistake-list" id="mistakeList">
+        <div style="font-size:0.65rem;color:var(--accent2)">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// ================================================================
+//  DATA VARIABLES
+//  In production, replace each block with a fetch() to your Flask
+//  endpoint, e.g.:
+//    const USER_DATA = await fetch('/api/user').then(r => r.json())
+// ================================================================
+
+// ── /api/user ───────────────────────────────────────────────────
+// Supabase tables: users, tower_progress
+const USER_DATA = {
+  display_name:   "Minh",
+  cefr_level:     "B2 — UPPER INTER.",
+  session_count:  24,
+  streak_current: 14,
+  streak_best:    21,
+  // Array of booleans for the last 14 days — true = completed that day
+  last_14_days: [true,true,true,true,true,true,true,
+                 true,true,true,true,true,true,true],
+  xp_today:    68,
+  xp_goal:     100,
+  xp_total:    2840,
+  words_learned: 347,
+  accuracy:    83,
+  tower: {
+    current_wave:      12,
+    total_waves:       20,
+    castle_hp:         72,
+    towers_built:      3,
+    enemies_defeated:  48
+  }
+};
+
+// ── /api/today-words ────────────────────────────────────────────
+// Supabase table: daily_words
+// words field is the parsed .content from the AI API response
+const WORDS_DATA = {
+  words: [
+    {
+      word: "Bureaucratic",
+      word_form: "adjective",
+      phonetic: "/byʊroʊˈkrætɪk/",
+      vietnamese_translation: "thuộc về hành chính quan liêu",
+      definition: "relating to the habits and practices of people who work in government offices, especially in a slow and inefficient way",
+      example: "The bureaucratic process took several months to complete.",
+      synonyms: ["administrative","official","red-tape"]
+    },
+    {
+      word: "Meritorious",
+      word_form: "adjective",
+      phonetic: "/məˈrɪtɔriəs/",
+      vietnamese_translation: "xứng đáng khen thưởng",
+      definition: "deserving praise or reward because of a notable achievement or service",
+      example: "The meritorious work of the scientists led to a major breakthrough.",
+      synonyms: ["deserving","commendable","notable"]
+    },
+    {
+      word: "Metamorphosis",
+      word_form: "noun",
+      phonetic: "/ˌmɛtəˈmɒrfəsɪs/",
+      vietnamese_translation: "sự biến đổi hoàn toàn",
+      definition: "a complete change in the form of something or someone",
+      example: "The caterpillar's metamorphosis into a butterfly was a wonder to behold.",
+      synonyms: ["transformation","change","mutation"]
+    },
+    {
+      word: "Fastidious",
+      word_form: "adjective",
+      phonetic: "/ˌfæsˈtɪdiəs/",
+      vietnamese_translation: "tỉ mỉ, cầu kỳ",
+      definition: "extremely careful and demanding in one's standards, especially regarding cleanliness or detail",
+      example: "The chef was a fastidious perfectionist, ensuring every dish met precise standards.",
+      synonyms: ["meticulous","fussy","exact"]
+    },
+    {
+      word: "Enigmatic",
+      word_form: "adjective",
+      phonetic: "/ɛˈnɪɡmætɪk/",
+      vietnamese_translation: "bí ẩn, khó hiểu",
+      definition: "difficult to understand because of unclear or ambiguous character",
+      example: "The enigmatic smile of the Mona Lisa has fascinated art lovers for centuries.",
+      synonyms: ["mysterious","cryptic","obscure"]
+    }
+  ]
+};
+
+// ── /api/chart ──────────────────────────────────────────────────
+// Supabase table: daily_scores
+const CHART_DATA = {
+  daily_scores: [
+    { date: "2025-03-07", correct_count: 8  },
+    { date: "2025-03-08", correct_count: 14 },
+    { date: "2025-03-09", correct_count: 11 },
+    { date: "2025-03-10", correct_count: 19 },
+    { date: "2025-03-11", correct_count: 7  },
+    { date: "2025-03-12", correct_count: 22 },
+    { date: "2025-03-13", correct_count: 17 },
+    { date: "2025-03-14", correct_count: 25 },
+    { date: "2025-03-15", correct_count: 13 },
+    { date: "2025-03-16", correct_count: 20 },
+    { date: "2025-03-17", correct_count: 28 },
+    { date: "2025-03-18", correct_count: 18 },
+    { date: "2025-03-19", correct_count: 23 },
+    { date: "2025-03-20", correct_count: 15 }
+  ]
+};
+
+// ── /api/mistakes ───────────────────────────────────────────────
+// Supabase table: quiz_attempts
+const MISTAKES_DATA = {
+  mistakes: [
+    {
+      question_text:  "Which word means \"open to more than one interpretation\"?",
+      user_answer:    "Ambivalent",
+      correct_answer: "Ambiguous",
+      attempted_at:   "2025-03-20T14:23:00Z"
+    },
+    {
+      question_text:  "Fill in: \"She took a ___ approach to solving the problem.\"",
+      user_answer:    "Pragmatism",
+      correct_answer: "Pragmatic",
+      attempted_at:   "2025-03-20T14:21:00Z"
+    },
+    {
+      question_text:  "Choose the synonym of \"alleviate\":",
+      user_answer:    "Aggravate",
+      correct_answer: "Mitigate",
+      attempted_at:   "2025-03-19T09:10:00Z"
+    },
+    {
+      question_text:  "Which adjective describes someone who never gives up?",
+      user_answer:    "Stubborn",
+      correct_answer: "Tenacious",
+      attempted_at:   "2025-03-18T20:45:00Z"
+    }
+  ]
+};
+
+// ================================================================
+//  RENDER
+// ================================================================
+(function () {
+  const u = USER_DATA;
+  const t = u.tower;
+
+  // ── Nav ──
+  document.getElementById('navDate').textContent =
+    new Date().toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+  document.getElementById('navLevel').textContent = u.cefr_level;
+  document.getElementById('navName').textContent  = u.display_name + ' N.';
+
+  // ── Greeting ──
+  const hour  = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greetingMain').innerHTML =
+    `${greet}, <span>${u.display_name}</span>.`;
+  document.getElementById('sessionLabel').textContent =
+    `// session_${String(u.session_count).padStart(3,'0')}`;
+
+  // ── Stats bar ──
+  document.getElementById('statStreak').textContent   = u.streak_current;
+  document.getElementById('statWords').textContent    = u.words_learned.toLocaleString();
+  document.getElementById('statXP').textContent       = u.xp_total.toLocaleString();
+  document.getElementById('statAccuracy').textContent = u.accuracy + '%';
+  document.getElementById('statWave').textContent     = 'Wave ' + t.current_wave;
+
+  // ── Streak card ──
+  document.getElementById('streakNumber').innerHTML =
+    `${u.streak_current}<sup>d</sup>`;
+  document.getElementById('streakBest').textContent =
+    `Personal best: ${u.streak_best} days`;
+
+  // Build 14-day dots. Work backwards from today.
+  const DAY_LABELS = ['S','M','T','W','T','F','S']; // 0=Sun
+  const dotsEl     = document.getElementById('streakDots');
+  const todayDow   = new Date().getDay();
+
+  u.last_14_days.forEach((active, i) => {
+    const isToday  = i === u.last_14_days.length - 1;
+    const daysAgo  = u.last_14_days.length - 1 - i;
+    const dow      = ((todayDow - daysAgo) % 7 + 7) % 7;
+    const d        = document.createElement('div');
+    d.className    = 'streak-dot' + (isToday ? ' today' : active ? ' active' : '');
+    d.textContent  = DAY_LABELS[dow];
+    dotsEl.appendChild(d);
+  });
+
+  const xpPct = Math.min(100, Math.round(u.xp_today / u.xp_goal * 100));
+  document.getElementById('xpLabel').textContent = `${u.xp_today} / ${u.xp_goal}`;
+  document.getElementById('xpFill').style.width  = xpPct + '%';
+
+  // ── Tower card ──
+  document.getElementById('waveBadge').textContent     = `WAVE ${t.current_wave} / ${t.total_waves}`;
+  document.getElementById('castleHpFill').style.width  = t.castle_hp + '%';
+  document.getElementById('towerBuilt').textContent    = t.towers_built;
+  document.getElementById('towerEnemies').textContent  = t.enemies_defeated;
+  document.getElementById('towerHp').textContent       = t.castle_hp + '%';
+  document.getElementById('towerBtn').innerHTML =
+    `<div class="btn-play-icon"></div> Continue — Wave ${t.current_wave}`;
+
+  // ── Today's Words ──
+  const wordList = document.getElementById('wordList');
+  wordList.innerHTML = '';
+  WORDS_DATA.words.forEach(w => {
+    const shortForm = w.word_form
+      .replace('adjective','adj')
+      .replace('adverb','adv')
+      .replace('noun','n')
+      .replace('verb','v');
+    wordList.innerHTML += `
+      <div class="word-item">
+        <div>
+          <div class="word-main">${w.word}</div>
+          <div class="word-def">${w.vietnamese_translation}</div>
+        </div>
+        <div class="word-tag">${shortForm}</div>
+      </div>`;
+  });
+
+  // ── Chart ──
+  const scores     = CHART_DATA.daily_scores;
+  const chartData  = scores.map(s => s.correct_count);
+  const chartDates = scores.map(s => {
+    const d = new Date(s.date);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+  });
+
+  document.getElementById('chartTotal').textContent =
+    chartData.reduce((a,b) => a+b, 0);
+
+  const W=560, H=160, PAD={top:20,right:8,bottom:10,left:28};
+  const iW = W-PAD.left-PAD.right, iH = H-PAD.top-PAD.bottom;
+  const mx = Math.max(...chartData);
+  const xS = i => PAD.left + (i/(chartData.length-1))*iW;
+  const yS = v => PAD.top  + iH - (v/mx)*iH;
+  const svg = document.getElementById('lineChart');
+
+  // Grid lines
+  [0, 0.5, 1].forEach(frac => {
+    const y   = PAD.top + iH - frac*iH;
+    const val = Math.round(frac*mx);
+    const ln  = document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1',PAD.left); ln.setAttribute('x2',W-PAD.right);
+    ln.setAttribute('y1',y);        ln.setAttribute('y2',y);
+    ln.setAttribute('stroke','rgba(34,34,59,0.07)'); ln.setAttribute('stroke-width','1');
+    svg.appendChild(ln);
+    const tx = document.createElementNS('http://www.w3.org/2000/svg','text');
+    tx.setAttribute('x',PAD.left-4); tx.setAttribute('y',y+3.5);
+    tx.setAttribute('text-anchor','end'); tx.setAttribute('font-size','8');
+    tx.setAttribute('fill','rgba(34,34,59,0.35)');
+    tx.setAttribute('font-family','Roboto Mono,monospace');
+    tx.textContent = val; svg.appendChild(tx);
+  });
+
+  // Area fill
+  const areaPts = chartData.map((v,i)=>`${xS(i)},${yS(v)}`).join(' ');
+  const area    = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  area.setAttribute('points',
+    `${xS(0)},${yS(0)} ${areaPts} ${xS(chartData.length-1)},${yS(0)}`);
+  area.setAttribute('fill','rgba(34,34,59,0.06)');
+  svg.appendChild(area);
+
+  // Line
+  const dStr = chartData.map((v,i)=>`${i===0?'M':'L'}${xS(i)},${yS(v)}`).join(' ');
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',dStr);
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke','rgba(34,34,59,0.85)');
+  path.setAttribute('stroke-width','1.8');
+  path.setAttribute('stroke-linejoin','round');
+  path.setAttribute('stroke-linecap','round');
+  const len = 600;
+  path.setAttribute('stroke-dasharray',len);
+  path.setAttribute('stroke-dashoffset',len);
+  path.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1) 0.3s';
+  svg.appendChild(path);
+  setTimeout(() => path.setAttribute('stroke-dashoffset','0'), 50);
+
+  // Dots
+  chartData.forEach((v,i) => {
+    const isToday = i === chartData.length-1;
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',xS(i)); c.setAttribute('cy',yS(v));
+    c.setAttribute('r', isToday ? '5' : '3.5');
+    c.setAttribute('fill', isToday ? 'rgba(34,34,59,1)' : 'rgba(242,233,228,1)');
+    c.setAttribute('stroke','rgba(34,34,59,0.85)');
+    c.setAttribute('stroke-width', isToday ? '0' : '1.5');
+    c.style.opacity = '0';
+    c.style.transition = `opacity 0.3s ${0.3+i*0.05}s`;
+    svg.appendChild(c);
+    setTimeout(() => c.style.opacity = '1', 50);
+    if (isToday) {
+      const lb = document.createElementNS('http://www.w3.org/2000/svg','text');
+      lb.setAttribute('x',xS(i)); lb.setAttribute('y',yS(v)-10);
+      lb.setAttribute('text-anchor','middle'); lb.setAttribute('font-size','9');
+      lb.setAttribute('font-weight','600'); lb.setAttribute('fill','rgba(34,34,59,0.9)');
+      lb.setAttribute('font-family','Roboto Mono,monospace');
+      lb.textContent = v; svg.appendChild(lb);
+    }
+  });
+
+  // X labels
+  const labelsEl = document.getElementById('chartLabels');
+  const step     = Math.ceil(chartData.length / 7);
+  labelsEl.style.cssText = 'position:relative;height:16px;';
+  chartData.forEach((_,i) => {
+    if (i % step !== 0 && i !== chartData.length-1) return;
+    const sp = document.createElement('span');
+    sp.className  = 'chart-x-label';
+    sp.textContent = chartDates[i];
+    sp.style.cssText = `position:absolute;left:${((xS(i)-PAD.left)/iW*100)}%;transform:translateX(-50%)`;
+    labelsEl.appendChild(sp);
+  });
+
+  // ── Recent Mistakes ──
+  const mistakeList = document.getElementById('mistakeList');
+  mistakeList.innerHTML = '';
+  MISTAKES_DATA.mistakes.forEach(m => {
+    mistakeList.innerHTML += `
+      <div class="mistake-item">
+        <div>
+          <div class="mistake-q">${m.question_text}</div>
+          <div class="mistake-a">✕ You answered: <strong>${m.user_answer}</strong> — correct: <strong>${m.correct_answer}</strong></div>
+        </div>
+      </div>`;
+  });
+
+})();
+
+// ================================================================
+//  3D TILT — toward mouse, intensive
+// ================================================================
+document.querySelectorAll('.card').forEach(card => {
+  const MAX_TILT = 18;
+  const LERP     = 0.12;
+  let tRx=0, tRy=0, cRx=0, cRy=0, rafId=null, hovered=false;
+
+  const lerp = (a,b,t) => a + (b-a)*t;
+
+  function animate() {
+    cRx = lerp(cRx, tRx, LERP);
+    cRy = lerp(cRy, tRy, LERP);
+    card.style.transform =
+      `perspective(700px) rotateX(${cRx}deg) rotateY(${cRy}deg) scale3d(1.02,1.02,1.02)`;
+    card.style.boxShadow =
+      'rgba(50,50,93,0.25) 0px 30px 60px -12px, rgba(0,0,0,0.3) 0px 18px 36px -18px';
+    const still = Math.abs(cRx-tRx)<0.01 && Math.abs(cRy-tRy)<0.01;
+    rafId = (hovered || !still) ? requestAnimationFrame(animate) : null;
+  }
+
+  card.addEventListener('mousemove', e => {
+    const r  = card.getBoundingClientRect();
+    const dx = (e.clientX - (r.left + r.width/2))  / (r.width/2);
+    const dy = (e.clientY - (r.top  + r.height/2)) / (r.height/2);
+    tRx = -dy * MAX_TILT;
+    tRy =  dx * MAX_TILT;
+    if (!rafId) { hovered=true; rafId=requestAnimationFrame(animate); }
+  });
+
+  card.addEventListener('mouseleave', () => {
+    hovered=false; tRx=0; tRy=0;
+    if (!rafId) rafId = requestAnimationFrame(animate);
+  });
+});
+</script>
+</body>
+</html>
