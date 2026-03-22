@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>loom - shop</title>
+  <link rel="icon" href="{{ url_for('static', filename='.module/favicon.ico') }}" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,400;0,700;0,900;1,400&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Cursor -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='.module/cursor/style.css') }}">
+  <script src="{{ url_for('static', filename='.module/cursor/script.js') }}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js"></script>
+
+  <style>
+    :root {
+      --dark: #22223B;
+      --light: #F2E9E4;
+      --accent: #9A8C98;
+      --muted: #4A4E69;
+      --gold: #F5C842;
+      --danger: #C1121F;
+      --green: #4CAF50;
+      --font: "Roboto Mono", monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      cursor: none !important;
+      user-select: none;
+    }
+
+    body {
+      background: var(--dark);
+      color: var(--light);
+      font-family: var(--font);
+      min-height: 100vh;
+      padding: 2rem;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    header {
+      max-width: 1100px;
+      margin: 0 auto 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 1.5rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-icon {
+      width: 2.6rem;
+      height: 2.6rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .logo h1 {
+      font-size: 2rem;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+    }
+
+    .header-sub {
+      margin-top: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .badge {
+      font-size: 0.6rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      padding: 0.3rem 0.85rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--accent);
+    }
+
+    #sync-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      display: inline-block;
+      transition: background 0.3s;
+    }
+
+    #sync-dot.syncing {
+      background: var(--gold);
+      animation: blink 0.7s ease-in-out infinite;
+    }
+
+    #sync-dot.synced {
+      background: var(--green);
+    }
+
+    #sync-dot.error {
+      background: var(--danger);
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.3
+      }
+    }
+
+    .stat-cards {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.8rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .stat-card .label {
+      font-size: 0.6rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      opacity: 0.7;
+    }
+
+    .stat-card .value {
+      font-size: 1.1rem;
+      font-weight: 900;
+      font-family: var(--font);
+    }
+
+    #loomlars-value {
+      color: var(--gold);
+    }
+
+    #timer-value {
+      color: var(--light);
+      font-size: 0.95rem;
+    }
+
+    /* TABS */
+    .tabs {
+      max-width: 1100px;
+      margin: 0 auto 1.5rem;
+      display: flex;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tab-btn {
+      font-family: var(--font);
+      font-size: 0.7rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      padding: 0.75rem 1.6rem;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: -1px;
+    }
+
+    .tab-btn:hover {
+      color: var(--light);
+    }
+
+    .tab-btn.active {
+      color: var(--light);
+      border-bottom-color: var(--light);
+    }
+
+    .tab-count {
+      font-size: 0.55rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+    }
+
+    .tab-btn.active .tab-count {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* TAB PANELS */
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* MAIN GRID */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* SHOP CARDS */
+    .shop-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+    }
+
+    @media (max-width: 540px) {
+      .shop-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .shop-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .shop-card:hover {
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .card-glow {
+      position: absolute;
+      top: -3rem;
+      right: -3rem;
+      width: 8rem;
+      height: 8rem;
+      border-radius: 50%;
+      filter: blur(50px);
+      opacity: 0.18;
+      pointer-events: none;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.2rem;
+    }
+
+    .item-icon {
+      width: 3.5rem;
+      height: 3.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 1.8rem;
+      flex-shrink: 0;
+    }
+
+    .card-badges {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.4rem;
+    }
+
+    .rarity-badge {
+      font-size: 0.55rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      padding: 0.25rem 0.6rem;
+      border: 1px solid;
+    }
+
+    .for-badge {
+      font-size: 0.55rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      opacity: 0.7;
+    }
+
+    .card-name {
+      font-size: 1rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.4rem;
+    }
+
+    .card-desc {
+      font-size: 0.65rem;
+      color: var(--accent);
+      opacity: 0.7;
+      font-style: italic;
+      margin-bottom: 1.2rem;
+      line-height: 1.6;
+    }
+
+    /* BUTTONS */
+    .buy-btn {
+      width: 100%;
+      padding: 0.85rem;
+      font-family: var(--font);
+      font-size: 0.75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.15s;
+    }
+
+    .buy-btn.purchasable {
+      background: var(--light);
+      color: var(--dark);
+    }
+
+    .buy-btn.purchasable:hover {
+      background: var(--gold);
+    }
+
+    .buy-btn.owned {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--accent);
+    }
+
+    .buy-btn.equipped {
+      background: rgba(76, 175, 80, 0.1);
+      border: 1px solid rgba(76, 175, 80, 0.3);
+      color: #4CAF50;
+    }
+
+    .buy-btn:active {
+      transform: scale(0.97);
+    }
+
+    .loom-icon {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      vertical-align: middle;
+    }
+
+    /* PURCHASE MESSAGE */
+    #purchase-msg {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0;
+      transition: opacity 0.3s;
+      border: 1px solid transparent;
+    }
+
+    #purchase-msg.show {
+      opacity: 1;
+    }
+
+    #purchase-msg.success {
+      background: rgba(76, 175, 80, 0.1);
+      border-color: rgba(76, 175, 80, 0.3);
+      color: #4CAF50;
+    }
+
+    #purchase-msg.error {
+      background: rgba(193, 18, 31, 0.1);
+      border-color: rgba(193, 18, 31, 0.3);
+      color: #ef4444;
+    }
+
+    /* INVENTORY */
+    .inv-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .inv-filter-row {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      font-family: var(--font);
+      font-size: 0.55rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.3rem 0.7rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn.active,
+    .filter-btn:hover {
+      background: var(--light);
+      color: var(--dark);
+      border-color: var(--light);
+    }
+
+    .inv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 1rem;
+    }
+
+    .inv-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 1rem;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.18s, transform 0.12s;
+      user-select: none;
+    }
+
+    .inv-card:hover {
+      border-color: rgba(255, 255, 255, 0.22);
+      transform: translateY(-2px);
+    }
+
+    .inv-card.active-equip {
+      border-color: rgba(76, 175, 80, 0.5);
+      background: rgba(76, 175, 80, 0.05);
+    }
+
+    .inv-card-glow {
+      position: absolute;
+      top: -2rem;
+      right: -2rem;
+      width: 5rem;
+      height: 5rem;
+      border-radius: 50%;
+      filter: blur(30px);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .inv-icon {
+      font-size: 2.2rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .inv-name {
+      font-size: 0.65rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.3rem;
+      line-height: 1.3;
+    }
+
+    .inv-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.18rem;
+    }
+
+    .inv-rarity {
+      font-size: 0.5rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .inv-tower {
+      font-size: 0.5rem;
+      color: var(--accent);
+      opacity: 0.6;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .inv-equip-badge {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      font-size: 0.45rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.15rem 0.4rem;
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid rgba(76, 175, 80, 0.4);
+      color: #4CAF50;
+    }
+
+    .inv-empty {
+      grid-column: 1 / -1;
+      padding: 3rem;
+      text-align: center;
+      color: var(--accent);
+      opacity: 0.4;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      border: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+
+    /* skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    .skel-card {
+      height: 140px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* PREVIEW PANEL */
+    .preview-panel {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 1.8rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      position: sticky;
+      top: 1.5rem;
+    }
+
+    .preview-label {
+      font-size: 0.55rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      color: var(--accent);
+      opacity: 0.6;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .preview-canvas {
+      display: block;
+      width: 100%;
+      max-width: 240px;
+    }
+
+    .tower-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .tower-pick-btn {
+      font-family: var(--font);
+      font-size: 0.55rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.35rem 0.7rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tower-pick-btn.active,
+    .tower-pick-btn:hover {
+      background: var(--light);
+      color: var(--dark);
+      border-color: var(--light);
+    }
+
+    .skin-status {
+      width: 100%;
+      padding: 0.8rem;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(0, 0, 0, 0.25);
+      font-size: 0.6rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      opacity: 0.6;
+    }
+
+    .skin-status.active-skin {
+      color: #4CAF50;
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="cursor" hidden>
+    <div class="cursor__ball cursor__ball--big ">
+      <svg height="30" width="30">
+        <circle cx="15" cy="15" r="12" stroke-width="0"></circle>
+      </svg>
+    </div>
+
+    <div class="cursor__ball cursor__ball--small">
+      <svg height="10" width="10">
+        <circle cx="5" cy="5" r="4" stroke-width="0"></circle>
+      </svg>
+    </div>
+  </div>
+
+  <header>
+    <a href="/dashboard" class="hoverable"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="10em"
+        height="auto" viewBox="0 0 1824 576" preserveAspectRatio="xMidYMid meet">
+        <g fill="var(--light)">
+          <path
+            d="M774.2 574 c-39.5 -6.2 -76.1 -20.6 -112.7 -44.5 -15.8 -10.2 -32.2 -24.3 -38.6 -32.9 -5.9 -7.9 -2.5 -17.3 7.6 -21.2 5.1 -1.9 10.2 -1.3 15 1.6 1.7 1.1 7.5 6.7 13 12.6 12.4 13.4 21.8 21.4 35.9 30.8 31.4 20.8 67.5 33 105.2 35.5 44.6 3 84.9 -10.4 105.2 -34.9 2.9 -3.6 7.2 -8.7 9.4 -11.4 4.8 -5.6 8.8 -7.6 15.5 -7.6 9.6 0 14.6 6.3 12.3 15.2 -0.9 3.3 -2.9 6 -8.9 11.7 -23.6 22.7 -59.4 39.1 -98.3 45 -17.4 2.7 -43.9 2.7 -60.6 0.1z" />
+          <path
+            d="M1530.5 574.5 c-17.1 -3.9 -29 -11.6 -35.7 -23.4 -1.3 -2.3 -3.2 -4.4 -4.3 -4.6 -18.4 -4.3 -63.1 -5.4 -97.5 -2.4 -27 2.3 -76.2 10.7 -110.2 18.8 -14 3.4 -16 3.2 -19.7 -1.5 l-2.1 -2.7 0 -243.6 c0 -164.5 0.3 -244.8 1 -247.3 1.8 -6.2 3.5 -6.8 19.6 -6.8 7.8 0 14.9 -0.3 15.8 -0.6 1.4 -0.5 1.6 -2.8 1.6 -14.6 0 -15.9 0.9 -19 6.2 -20.7 8.7 -2.7 44.9 -8.2 67.7 -10.2 17.4 -1.5 57.7 -0.7 73.6 1.6 38.7 5.3 69.5 17.4 92.5 36.1 l7.6 6.1 3.9 -3.4 c6.1 -5.1 21.1 -15.1 28.6 -18.9 22.1 -11.1 44.9 -17.5 75 -21 19.2 -2.2 60.7 -1.5 85.4 1.5 19.5 2.4 44.8 6.6 48.6 8.2 4.3 1.7 4.9 4.3 5.2 20.4 l0.2 15 15.3 0.3 15.2 0.3 0 252.4 0 252.4 -3.2 -0.6 c-1.8 -0.3 -8 -1.7 -13.8 -3 -77.3 -18 -139.9 -23.8 -191.6 -17.8 -7.1 0.9 -13.6 1.8 -14.4 2 -0.8 0.3 -2.3 2.3 -3.3 4.4 -4.5 9.8 -18.2 19.1 -34.1 23.1 -9.2 2.3 -23.8 2.5 -33.1 0.5z m24.4 -15.5 c14 -1.8 24.1 -8.3 29.2 -18.5 1.7 -3.6 3.7 -6.9 4.4 -7.5 4.3 -3.6 38.3 -7 70.6 -7 44.3 0 84.6 4.9 136.6 16.6 8.3 1.9 15.8 3.4 16.7 3.4 1.5 0 1.6 -20.9 1.6 -233.9 l0 -233.9 -9.2 -0.4 c-5.1 -0.3 -9.6 -0.3 -10 -0.1 -0.5 0.2 -0.8 97 -0.8 215.1 0 144.7 -0.3 215.9 -1 218.4 -1.2 4.2 -4.2 6.8 -7.8 6.8 -1.3 0 -9 -1.8 -17.1 -4 -40.1 -10.8 -69.5 -15.2 -101.6 -15.3 -24.3 0 -35 1.2 -54 6.3 -22.5 6 -39.2 14.3 -59.3 29.7 -6.3 4.8 -8.6 4.4 -17.2 -2.8 -2.5 -2 -8.5 -6.2 -13.5 -9.2 -37.9 -22.9 -82.3 -29.4 -141.5 -20.6 -15.9 2.4 -45.2 8.7 -60 12.9 -12.9 3.7 -16.3 3.8 -19.5 0.5 l-2.5 -2.4 0 -217.5 0 -217.4 -7.2 -0.7 c-4 -0.4 -8.6 -0.5 -10.3 -0.3 l-3 0.3 -0.3 234.4 -0.2 234.4 3.7 -0.6 c2.1 -0.3 12.4 -2.4 22.8 -4.7 51.9 -11.3 91.4 -15.6 137.8 -14.7 27.6 0.5 55.9 3.1 60.7 5.7 1 0.5 2.8 3.1 4 5.7 5.9 12.7 15.1 18.8 32.5 21.3 7 1 7.2 1 15.4 0z m9.5 -52.5 c18.3 -11 42.8 -19.3 67.7 -23.1 15.7 -2.4 50.1 -2.4 69.9 0 19.2 2.3 37 5.6 56.5 10.6 8.8 2.2 16.6 4 17.3 4 0.9 0 1.2 -46.5 1.2 -229 0 -125.9 -0.1 -229 -0.3 -229 -0.1 0 -4.9 -0.9 -10.7 -2 -41.5 -7.9 -87.3 -9.6 -121.5 -4.5 -33.6 5.1 -65.2 18.5 -83.7 35.7 l-5.7 5.3 -0.3 218.8 c-0.2 120.3 -0.2 218.7 0 218.7 0.2 0 4.5 -2.5 9.6 -5.5z m-26.4 -213 l0 -217.5 -3.7 -4 c-5.7 -6.3 -17.9 -15.1 -29.1 -20.9 -36.5 -18.7 -90.7 -25.1 -149.7 -17.6 -15.7 2.1 -35.4 5.4 -38.2 6.5 l-2.3 1 0 229 c0 217.8 0.1 229.1 1.8 228.6 15.2 -4.8 53.2 -12.7 73.7 -15.2 19.5 -2.5 54.8 -2.5 70.4 -0.1 24.6 3.9 50.7 12.7 66.9 22.7 4.2 2.6 8.3 4.8 9 4.9 0.9 0.1 1.2 -44 1.2 -217.4z" />
+          <path
+            d="M1617.9 396.8 c-0.3 -27.1 0.5 -32.5 5.7 -39.4 4.3 -5.6 10.5 -8.6 18.8 -9.2 12.7 -0.8 21.3 3.5 26.3 13 2.5 4.8 2.8 6.5 3.1 18.6 l0.4 13.2 16.9 0 16.9 0 0 6 0 6 -44 0 -44 0 -0.1 -8.2z m42.9 -15.7 c-0.3 -10.2 -0.6 -12.4 -2.4 -14.7 -5.3 -7.2 -13.7 -9.2 -21.4 -5.2 -6.9 3.6 -8.4 7.1 -8.9 20.6 l-0.3 11.2 16.7 0 16.7 0 -0.4 -11.9z" />
+          <path
+            d="M1611 317.5 l0 -14.5 42.5 0 42.5 0 0 -9 0 -9 4.9 0 c2.8 0 5.2 0.4 5.5 0.8 0.2 0.4 0.2 11 -0.1 23.5 l-0.6 22.7 -4.8 0 -4.8 0 -0.3 -8.7 -0.3 -8.8 -36.7 -0.3 -36.8 -0.2 0 9 0 9 -5.5 0 -5.5 0 0 -14.5z" />
+          <path
+            d="M1679.9 269.5 c-9.9 -3.1 -14.9 -13 -15.3 -29.8 l-0.2 -9.2 -4.1 0.1 c-5.2 0.1 -9.1 2.6 -10.9 6.9 -3 7.3 -0.6 16.7 4.9 19.3 2.5 1.2 2.7 1.8 2.7 6.8 0 6.1 -0.4 6.3 -6.6 3.5 -4.9 -2.2 -9.7 -7.8 -11.3 -13 -1.4 -4.9 -1.4 -15.8 0 -20.2 1.8 -5.2 5.6 -9.7 10.2 -12.1 3.9 -2.1 5.9 -2.3 29.2 -2.8 13.8 -0.3 25.6 -0.9 26.3 -1.3 0.9 -0.6 1.2 0.6 1.2 5.2 0 5.7 -0.1 6.1 -2.3 6.1 -3.7 0 -3.8 1 -0.5 5.8 2.5 3.6 3.2 5.8 3.6 11.2 0.5 8 -0.8 12.8 -5.1 17.6 -5.5 6.4 -13.5 8.5 -21.8 5.9z m12.4 -12.6 c6.3 -4.9 5.4 -17.2 -1.8 -23.9 -2.1 -2 -3.9 -2.5 -9.7 -2.8 l-7 -0.4 0.4 9.8 c0.3 6.7 1 10.9 2.1 13.1 3.2 6.1 11.1 8.1 16 4.2z" />
+          <path
+            d="M1639 199.1 l0 -5.9 12.6 -5.2 c6.9 -2.8 16.7 -6.7 21.7 -8.7 5.1 -1.9 10.3 -3.9 11.7 -4.5 2.3 -0.9 1.3 -1.5 -10 -6 -6.9 -2.7 -17.7 -6.9 -24 -9.3 l-11.5 -4.3 -0.3 -6.1 c-0.2 -3.5 0.1 -6.1 0.7 -6.1 1.4 0 63.2 25.5 73.6 30.4 13.2 6.2 18.5 13.2 18.5 24.5 l0 4.1 -5 0 c-4.7 0 -5 -0.2 -5 -2.5 0 -6.8 -5.1 -12.8 -14.2 -17 l-5.8 -2.6 -18.7 7.6 c-10.4 4.3 -24.2 9.9 -30.8 12.6 -6.5 2.7 -12.3 4.9 -12.7 4.9 -0.4 0 -0.8 -2.7 -0.8 -5.9z" />
+          <path d="M1372 427 l0 -6 39.5 0 39.5 0 0 -19.5 0 -19.5 5.5 0 5.5 0 0 25.5 0 25.5 -45 0 -45 0 0 -6z" />
+          <path
+            d="M1416.3 367.5 c-16.4 -4.5 -25.2 -19 -21.2 -35 1.4 -5.4 7.6 -12.8 13.1 -15.6 4.2 -2.2 19.5 -4.6 22.2 -3.6 1.4 0.6 1.6 3.1 1.6 22.2 l0 21.5 2.8 0 c4.4 -0.1 10.7 -3.5 13.7 -7.5 5.3 -6.8 4.5 -18 -1.7 -25.1 l-3.1 -3.5 2.4 -2.7 c1.3 -1.5 2.7 -3.1 3 -3.5 1 -1.3 8.8 6.2 11.1 10.7 2.9 5.7 3.6 16.8 1.4 23.3 -1.9 5.7 -7 12.1 -12.1 15.3 -7.8 4.8 -22.5 6.4 -33.2 3.5z m5.7 -26.5 c0 -15.8 0 -16 -2.2 -16 -3.3 0 -10.1 3.7 -12.2 6.7 -1.1 1.4 -2.1 4.7 -2.4 7.3 -0.6 6.8 1.8 11.4 8.2 15.1 8.8 5 8.6 5.3 8.6 -13.1z" />
+          <path
+            d="M1436.1 297.6 c-10.2 -3.4 -14.3 -10.9 -14.9 -27.8 -0.4 -11.7 -0.5 -11.8 -2.9 -11.8 -3.7 0 -8.8 2.5 -11.1 5.5 -4.3 5.5 -2.2 18.5 3.4 21.6 2.4 1.2 2.5 1.7 1.9 6.4 -0.4 2.7 -0.9 5.1 -1 5.3 -0.6 0.7 -8.1 -3 -10.3 -5.1 -6 -5.6 -8.7 -17.5 -6.2 -27.7 1.6 -6.8 8.5 -14.3 14.5 -15.8 2.2 -0.6 14.9 -1.2 28.3 -1.4 l24.2 -0.3 0 5.3 c0 5.1 -0.1 5.2 -2.9 5.2 -3.8 0 -4.6 1.3 -2.2 3.4 1.1 1 2.9 4.1 4.1 6.9 2.9 6.6 2.4 15.5 -1.1 21.7 -4.4 7.7 -14.7 11.5 -23.8 8.6z m13.6 -14.1 c4.4 -5.1 2.4 -17.5 -3.7 -23 -1.7 -1.6 -3.6 -2 -8.9 -2 l-6.6 0 0.1 9 c0.1 10.2 2 15.6 6.3 18.1 3.8 2.1 10.1 1.1 12.8 -2.1z" />
+          <path
+            d="M1395 216.5 l0 -5.5 4.6 0 4.7 0 -4.1 -4.4 c-2.3 -2.5 -4.4 -5.7 -4.7 -7.3 -0.4 -1.5 -0.9 -3.4 -1.1 -4.2 -0.3 -0.8 -0.2 -4.1 0.2 -7.3 l0.7 -5.9 5.5 0.3 5.6 0.3 0 9.2 c0.1 9.9 1.1 12.4 7 16.7 2.5 2 4.3 2.1 25.7 2.4 l22.9 0.3 0 5.5 0 5.4 -33.5 0 -33.5 0 0 -5.5z" />
+          <path
+            d="M1395 158.5 l0 -5.5 3.6 0 3.5 0 -2.7 -3.5 c-9.9 -13 -5.5 -31.6 8.4 -35.5 2.1 -0.5 14.7 -1 29 -1 l25.2 0 0 5.5 0 5.5 -24 0 c-25.8 0 -28 0.4 -31.4 5.2 -2 2.9 -2.1 12 -0.1 15.7 0.8 1.6 2.8 4 4.5 5.5 l3.2 2.6 23.9 0 23.9 0 0 5.5 0 5.5 -33.5 0 -33.5 0 0 -5.5z" />
+          <path
+            d="M0.7 521.3 c-0.4 -0.3 -0.7 -3.9 -0.7 -7.9 0 -8.5 0.1 -8.6 10.8 -10.9 10 -2.1 18.3 -5.4 21.3 -8.6 3.9 -4.2 5.8 -12.6 7 -30.9 1.5 -24.2 0.6 -392.6 -1 -404 -1.5 -11 -2.8 -14.9 -5.9 -18.2 -2.7 -2.9 -10.8 -5.9 -20.7 -7.8 -11.7 -2.1 -10.5 -0.9 -10.5 -11.1 l0 -9.1 14.3 0.8 c18.4 1 84 1 102.5 0 l14.2 -0.8 0 8.5 c0 4.7 -0.4 8.8 -0.8 9.1 -0.5 0.3 -5.3 1.5 -10.8 2.7 -17.2 3.6 -21.3 6.4 -23.8 16.3 -3.9 14.9 -4.1 26.1 -4.1 234.8 0 110.9 0.3 202 0.7 202.3 2.7 2.7 106.7 4 128.3 1.6 14.7 -1.6 28.8 -5.1 35.7 -8.8 12.7 -6.8 25.2 -22.5 34.2 -42.8 2.7 -6 5.3 -11.6 5.9 -12.2 1 -1.4 10.2 -1.8 15.5 -0.7 5.3 1.1 5.6 -1.9 -5.3 56 -3.6 18.7 -7 35.8 -7.7 38 l-1.3 3.9 -148.6 0.3 c-81.7 0.1 -148.9 -0.1 -149.2 -0.5z" />
+          <path
+            d="M1049.1 470.9 c-40.7 -4.3 -82.3 -23.1 -119.6 -54 -26.7 -22.2 -55.9 -56.1 -74.3 -86.1 -9.6 -15.7 -19.4 -40.8 -22.9 -58.8 -2.8 -14.5 -2.5 -52.6 0.5 -66.6 8 -37.1 28.2 -69.8 60.3 -98 26.4 -23.2 59 -41.7 107.9 -61.2 30 -12 67.4 -25.2 71.5 -25.2 5.7 0 8.4 5.5 4.8 9.9 -1.2 1.4 -9.3 4.9 -22.3 9.7 -18.7 6.8 -20 7.5 -14.5 6.9 44.7 -4.1 82.7 1.5 112.9 16.7 30.3 15.2 52.4 37.3 67.4 67.3 14.2 28.5 22.6 72.2 20.8 108.5 -2.8 54.1 -17.7 105.6 -43.1 148.5 -17.2 29 -36.9 51.5 -55.4 63 -26 16.2 -58.9 23 -94 19.4z m47.9 -18.8 c11.7 -2.7 19 -5.4 27.9 -10.2 27.6 -14.9 52 -45.1 72.6 -89.9 25.2 -55.2 32.9 -118.4 21 -173.5 -5.7 -26.5 -15.4 -46.9 -32.1 -67.5 -13.5 -16.8 -36.5 -32.1 -60.3 -40.4 -37.9 -13.2 -89.6 -12.1 -136.1 2.9 -63.1 20.4 -113.7 63.3 -133.4 113 -12.5 31.8 -13.4 67.9 -2.5 101 8.1 24.5 23.3 49.4 47 77.1 41.1 48 91 79.8 137.9 87.8 14.7 2.5 14.5 2.5 32.5 2.1 12.5 -0.3 19.3 -0.9 25.5 -2.4z" />
+          <path
+            d="M1039.9 299.3 l-5.4 -3.8 -11 0 c-6 0 -17.5 0.4 -25.5 0.9 -14.3 0.8 -14.6 0.8 -18 -1.5 -2 -1.4 -4.6 -4.6 -6 -7.4 -2.1 -4.3 -2.5 -6.4 -2.5 -14.5 0 -7.8 0.4 -10.4 2.4 -14.8 2.8 -6.3 7.8 -10.9 12.7 -11.8 5.9 -1.1 28 0.4 38.2 2.5 18.4 3.9 28.1 9.1 32.4 17.4 2.6 5.2 3.5 16.9 1.8 25 -2.5 12.1 -9.2 14.9 -19.1 8z" />
+          <path
+            d="M496.5 446.3 c-29.3 -3.7 -59.8 -14.7 -83.5 -30 -47.8 -31 -77.1 -78.5 -86.6 -140.3 -2.1 -14 -2.4 -45.9 -0.6 -60 3.5 -26.1 11.9 -53.3 23.7 -76.5 20.1 -39.7 45.7 -68.7 82.6 -93.7 28.4 -19.3 68.9 -36.6 100.7 -43.2 11.6 -2.5 13.9 -2.6 43.1 -2.6 38.1 0 42.6 0.7 76.3 11.6 14.1 4.6 16.8 6.4 16.8 10.9 0 1.1 -0.7 3.1 -1.6 4.3 -2.3 3.3 -7.5 2.9 -22.2 -1.7 -25.5 -8 -40.5 -10.8 -61.7 -11.7 -34.2 -1.5 -64.4 5.6 -106.9 25 -4.4 2 -7.7 3.8 -7.5 4.1 0.3 0.2 3.1 -0.5 6.4 -1.6 42.7 -14.2 111.4 -15.4 160.2 -3 58.6 15 102.5 46.5 125.8 90.4 5.1 9.6 11.6 28.5 13.8 40.2 3.7 19.4 3 42.3 -1.9 64.2 -8.6 38.4 -23.6 68.6 -51.9 104.2 -47.5 59.5 -110.8 99.3 -172.7 108.5 -9.7 1.5 -43.4 2.1 -52.3 0.9z m53 -17.4 c47.8 -7.9 91.3 -32.2 134.7 -75.1 35.6 -35.3 61.6 -78.4 70.9 -117.3 19.7 -83.1 -22 -149.9 -112.2 -179.6 -27.9 -9.2 -50.1 -12.3 -86.4 -12.3 -37.1 0.1 -56.6 3 -85.6 13 -19.7 6.8 -26.5 9.8 -40.2 18.1 -29.1 17.5 -50.3 41.3 -66.7 74.8 -14.5 29.6 -20.6 54.5 -21.7 87.6 -0.6 20.4 0.2 30.7 4.3 50.2 6.6 31.4 22.3 62.6 43 85.5 16.3 18 43.1 36.5 64.9 44.8 32.6 12.3 63.1 15.7 95 10.3z" />
+          <path
+            d="M565.9 278.8 l-5.3 -4.3 -26.3 0.3 c-30.6 0.4 -31.7 0.1 -35.4 -7.6 -3.1 -6.3 -3.7 -17.9 -1.4 -25.8 3.4 -11.8 7.3 -14.5 21.6 -15.2 16.7 -0.8 38.6 2.8 50.4 8.2 12.3 5.6 17 13.3 16.9 27.7 -0.1 19.7 -8.3 26.3 -20.5 16.7z" />
+        </g>
+      </svg></a>
+    <div>
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <path d="M16 10a4 4 0 01-8 0" />
+          </svg>
+        </div>
+        <h1>Shop</h1>
+      </div>
+      <div class="header-sub">
+        <span class="badge">Refreshes daily</span>
+        <span id="sync-dot" title="Sync"></span>
+      </div>
+    </div>
+    <div class="stat-cards">
+      <div class="stat-card">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        <div>
+          <div class="label">Resets In</div>
+          <div class="value" id="timer-value">--:--:--</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <svg width="22" height="22" viewBox="0 0 563 562" fill="#F5C842" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(-1261,-14)">
+            <path
+              d="M1530.5,574.5C1513.4,570.6 1501.5,562.9 1494.8,551.1C1493.5,548.8 1491.6,546.7 1490.5,546.5C1472.1,542.2 1427.4,541.1 1393,544.1C1366,546.4 1316.8,554.8 1282.8,562.9C1268.8,566.3 1266.8,566.1 1263.1,561.4L1261,558.7L1261,315.1C1261,150.6 1261.3,70.3 1262,67.8C1263.8,61.6 1265.5,61 1281.6,61C1289.4,61 1296.5,60.7 1297.4,60.4C1298.8,59.9 1299,57.6 1299,45.8C1299,29.9 1299.9,26.8 1305.2,25.1C1313.9,22.4 1350.1,16.9 1372.9,14.9C1390.3,13.4 1430.6,14.2 1446.5,16.5C1485.2,21.8 1516,33.9 1539,52.6L1546.6,58.7L1550.5,55.3C1556.6,50.2 1571.6,40.2 1579.1,36.4C1601.2,25.3 1624,18.9 1654.1,15.4C1673.3,13.2 1714.8,13.9 1739.5,16.9C1759,19.3 1784.3,23.5 1788.1,25.1C1792.4,26.8 1793,29.4 1793.3,45.5L1793.5,60.5L1808.8,60.8L1824,61.1L1824,565.9L1820.8,565.3C1819,565 1812.8,563.6 1807,562.3C1729.7,544.3 1667.1,538.5 1615.4,544.5C1608.3,545.4 1601.8,546.3 1601,546.5C1600.2,546.8 1598.7,548.8 1597.7,550.9C1593.2,560.7 1579.5,570 1563.6,574C1554.4,576.3 1539.8,576.5 1530.5,574.5Z" />
+          </g>
+        </svg>
+        <div>
+          <div class="label">Loomlars</div>
+          <div class="value" id="loomlars-value">—</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active hoverable" data-tab="shop">Shop</button>
+    <button class="tab-btn hoverable" data-tab="inventory">Inventory <span class="tab-count"
+        id="inv-count">0</span></button>
+  </div>
+
+  <!-- SHOP TAB -->
+  <div class="tab-panel active" id="tab-shop">
+    <div class="main">
+      <div>
+        <div class="shop-grid" id="shop-grid"></div>
+        <div id="purchase-msg"></div>
+      </div>
+      <div class="preview-panel">
+        <div class="preview-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#F5C842">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          Live Preview
+        </div>
+        <canvas id="canvas-shop" class="preview-canvas" width="240" height="240"></canvas>
+        <div class="tower-picker" id="picker-shop"></div>
+        <div class="skin-status" id="status-shop">No skin equipped</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVENTORY TAB -->
+  <div class="tab-panel" id="tab-inventory">
+    <div class="main">
+      <div>
+        <div class="inv-header">
+          <div class="inv-filter-row" id="inv-filters">
+            <button class="hoverable filter-btn active" data-filter="all">All</button>
+            <button class="hoverable filter-btn" data-filter="Common">Common</button>
+            <button class="hoverable filter-btn" data-filter="Uncommon">Uncommon</button>
+            <button class="hoverable filter-btn" data-filter="Rare">Rare</button>
+            <button class="hoverable filter-btn" data-filter="Epic">Epic</button>
+            <button class="hoverable filter-btn" data-filter="Legendary">Legendary</button>
+            <button class="hoverable filter-btn" data-filter="Mythical">Mythical</button>
+          </div>
+        </div>
+        <div class="inv-grid" id="inv-grid">
+          <div class="skel-card skeleton"></div>
+          <div class="skel-card skeleton"></div>
+          <div class="skel-card skeleton"></div>
+        </div>
+      </div>
+      <div class="preview-panel">
+        <div class="preview-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#F5C842">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          Live Preview
+        </div>
+        <canvas id="canvas-inv" class="preview-canvas" width="240" height="240"></canvas>
+        <div class="tower-picker" id="picker-inv"></div>
+        <div class="skin-status" id="status-inv">No skin equipped</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════
+    //  SUPABASE
+    // ═══════════════════════════════════════════════════
+    const SUPABASE_URL = 'https://ypktiqorqpytqrfufbpj.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_r3U8mKoht6QE22lYTJ5D0Q_VqnT2bNm';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function restoreSession() {
+      try {
+        const r = await fetch('/api/session');
+        if (!r.ok) return;
+        const { access_token, refresh_token } = await r.json();
+        await sb.auth.setSession({ access_token, refresh_token });
+      } catch (_) { }
+    }
+
+    async function getUid() {
+      const { data: { user } } = await sb.auth.getUser();
+      return user?.id ?? null;
+    }
+
+    function dot(state) {
+      const el = document.getElementById('sync-dot');
+      el.className = state;
+      el.title = { syncing: 'Syncing…', synced: 'Saved', error: 'Sync error' }[state] ?? '';
+    }
+
+    async function loadProfile() {
+      dot('syncing');
+      const uid = await getUid();
+      if (!uid) { dot('error'); return; }
+
+      const { data, error } = await sb
+        .from('profiles')
+        .select('loomlars, owned_items, equipped_skins')
+        .eq('id', uid)
+        .single();
+
+      if (error) { dot('error'); console.error(error.message); return; }
+
+      loomlars = data?.loomlars ?? 0;
+      ownedItems = data?.owned_items ?? [];
+      equippedSkins = data?.equipped_skins ?? {};
+
+      // Rebuild runtime equippedAccessory from the persisted map
+      // Use the first equipped entry as the "active" one for display
+      equippedAccessory = null;
+      for (const [tId, aId] of Object.entries(equippedSkins)) {
+        const acc = ALL_ACCESSORIES.find(a => a.id === aId);
+        const tow = TOWERS.find(t => t.id === tId);
+        if (acc && tow) { equippedAccessory = { accessory: acc, towerId: tId }; break; }
+      }
+
+      renderLoomlars();
+      updateInvCount();
+      renderShop();
+      renderInventory();
+      renderAllStatuses();
+      dot('synced');
+    }
+
+    let _saveTimer = null;
+    function scheduleSave() {
+      clearTimeout(_saveTimer);
+      _saveTimer = setTimeout(async () => {
+        dot('syncing');
+        const uid = await getUid();
+        if (!uid) { dot('error'); return; }
+        const { error } = await sb
+          .from('profiles')
+          .update({ loomlars, owned_items: ownedItems, equipped_skins: equippedSkins })
+          .eq('id', uid);
+        error ? dot('error') : dot('synced');
+        if (error) console.error(error.message);
+      }, 600);
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  DATA
+    // ═══════════════════════════════════════════════════
+    const TOWERS = [
+      { id: 'sentry', name: 'Sentry', shape: 'square' },
+      { id: 'sharp', name: 'Sharp', shape: 'diamond' },
+      { id: 'frost', name: 'Frost', shape: 'hexagon' },
+      { id: 'tesla', name: 'Tesla', shape: 'star' },
+      { id: 'bomber', name: 'Bomber', shape: 'octagon' },
+      { id: 'banker', name: 'Banker', shape: 'circle' },
+      { id: 'rail', name: 'Rail', shape: 'triangle' },
+      { id: 'void', name: 'Void', shape: 'star' },
+    ];
+
+    const ALL_ACCESSORIES = [
+      { id: 'viking_helmet', name: 'Viking Helmet', rarity: 'Rare', desc: 'Sentry looks ready for Valhalla.', icon: '🪖', color: '#2563eb' },
+      { id: 'wizard_hat', name: 'Sorcerer Hat', rarity: 'Epic', desc: 'Star-stitched fabric for magic towers.', icon: '🧙', color: '#7c3aed' },
+      { id: 'monocle', name: 'Elite Monocle', rarity: 'Common', desc: 'Precision vision for any unit.', icon: '🧐', color: '#64748b' },
+      { id: 'cape_red', name: 'Heroic Cape', rarity: 'Legendary', desc: 'Flutters majestically behind the square.', icon: '🧣', color: '#ca8a04' },
+      { id: 'glasses_cool', name: 'Tactical Shades', rarity: 'Uncommon', desc: 'Style is the best defense.', icon: '🕶️', color: '#16a34a' },
+      { id: 'crown_gold', name: "King's Crown", rarity: 'Legendary', desc: 'The ultimate royal upgrade.', icon: '👑', color: '#ca8a04' },
+      { id: 'bunny_ears', name: 'Rabbit Ears', rarity: 'Common', desc: 'Oddly adorable on a stone unit.', icon: '🐰', color: '#64748b' },
+      { id: 'cyber_eye', name: 'Cybernetic Eye', rarity: 'Epic', desc: 'Neon components from the future.', icon: '👁️', color: '#7c3aed' },
+      { id: 'pirate_hat', name: 'Pirate Tricorne', rarity: 'Rare', desc: 'Smells of sea salt and black powder.', icon: '🏴‍☠️', color: '#2563eb' },
+      { id: 'halo', name: 'Angelic Halo', rarity: 'Legendary', desc: 'Divine light for high-tier defenses.', icon: '😇', color: '#ca8a04' },
+      { id: 'leaf_crown', name: 'Forest Diadem', rarity: 'Uncommon', desc: 'Woven from eternal spring leaves.', icon: '🌿', color: '#16a34a' },
+      { id: 'phoenix_wing', name: 'Phoenix Soul', rarity: 'Mythical', desc: 'Burning with an undying flame.', icon: '🔥', color: '#dc2626' },
+      { id: 'void_mask', name: 'Void Reaver Mask', rarity: 'Mythical', desc: 'A relic from the space between worlds.', icon: '👺', color: '#dc2626' },
+    ];
+
+    const RARITY = {
+      Common: { weight: 50, cost: 2, text: '#94a3b8', border: 'rgba(148,163,184,0.35)', bg: 'rgba(148,163,184,0.08)' },
+      Uncommon: { weight: 30, cost: 5, text: '#4ade80', border: 'rgba(74,222,128,0.35)', bg: 'rgba(74,222,128,0.08)' },
+      Rare: { weight: 15, cost: 10, text: '#60a5fa', border: 'rgba(96,165,250,0.35)', bg: 'rgba(96,165,250,0.08)' },
+      Epic: { weight: 5, cost: 15, text: '#c084fc', border: 'rgba(192,132,252,0.35)', bg: 'rgba(192,132,252,0.08)' },
+      Legendary: { weight: 1, cost: 30, text: '#fbbf24', border: 'rgba(251,191,36,0.35)', bg: 'rgba(251,191,36,0.08)' },
+      Mythical: { weight: 0.1, cost: 50, text: '#f87171', border: 'rgba(248,113,113,0.35)', bg: 'rgba(248,113,113,0.08)' },
+    };
+
+    // ═══════════════════════════════════════════════════
+    //  STATE
+    // ═══════════════════════════════════════════════════
+    let loomlars = 0;
+    let ownedItems = [];   // [{accessoryId, towerId}]
+    let equippedSkins = {};   // { towerId: accessoryId }  ← persisted in DB
+    let equippedAccessory = null; // runtime convenience { accessory, towerId }
+    let selectedTowerShop = TOWERS[0];
+    let selectedTowerInv = TOWERS[0];
+    let invFilter = 'all';
+    let _msgTimer = null;
+
+    // Daily shop build
+    function buildShop() {
+      const now = new Date();
+      let seed = parseInt(`${now.getUTCFullYear()}${now.getUTCMonth()}${now.getUTCDate()}`);
+      const rng = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+      return Array.from({ length: 4 }, (_, i) => {
+        const roll = rng() * 100;
+        let cum = 0, rarity = 'Common';
+        for (const [r, c] of Object.entries(RARITY)) { cum += c.weight; if (roll <= cum) { rarity = r; break; } }
+        const pool = ALL_ACCESSORIES.filter(a => a.rarity === rarity);
+        const base = pool[Math.floor(rng() * pool.length)] || ALL_ACCESSORIES[0];
+        return { ...base, cost: RARITY[rarity].cost, targetTower: TOWERS[i % 3] };
+      });
+    }
+    const SHOP = buildShop();
+
+    // Countdown
+    function updateTimer() {
+      const now = new Date(), t = new Date(now);
+      t.setUTCHours(24, 0, 0, 0);
+      const d = t - now, pad = n => String(Math.floor(n)).padStart(2, '0');
+      document.getElementById('timer-value').textContent =
+        `${pad(d / 3600000)}:${pad((d % 3600000) / 60000)}:${pad((d % 60000) / 1000)}`;
+    }
+    setInterval(updateTimer, 1000); updateTimer();
+
+    function renderLoomlars() { document.getElementById('loomlars-value').textContent = loomlars.toLocaleString(); }
+    function updateInvCount() { document.getElementById('inv-count').textContent = ownedItems.length; }
+
+    // ═══════════════════════════════════════════════════
+    //  TABS
+    // ═══════════════════════════════════════════════════
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${btn.dataset.tab}`));
+      };
+    });
+
+    // ═══════════════════════════════════════════════════
+    //  CANVAS
+    // ═══════════════════════════════════════════════════
+    function drawShape(ctx, x, y, size, shape) {
+      ctx.beginPath();
+      switch (shape) {
+        case 'square': ctx.rect(x - size, y - size, size * 2, size * 2); break;
+        case 'diamond': ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size, y); ctx.lineTo(x, y + size * 1.2); ctx.lineTo(x - size, y); break;
+        case 'circle': ctx.arc(x, y, size, 0, Math.PI * 2); break;
+        case 'hexagon': for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; i ? ctx.lineTo(x + size * Math.cos(a), y + size * Math.sin(a)) : ctx.moveTo(x + size * Math.cos(a), y + size * Math.sin(a)); } break;
+        case 'triangle': ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size * 1.2, y + size); ctx.lineTo(x - size * 1.2, y + size); break;
+        case 'octagon': for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + Math.PI / 8; i ? ctx.lineTo(x + size * Math.cos(a), y + size * Math.sin(a)) : ctx.moveTo(x + size * Math.cos(a), y + size * Math.sin(a)); } break;
+        case 'star': for (let i = 0; i < 10; i++) { const r = (i % 2 === 0) ? size : size * 0.4, a = i * Math.PI / 5 - Math.PI / 2; i ? ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)) : ctx.moveTo(x + r * Math.cos(a), y + r * Math.sin(a)); } break;
+      }
+      ctx.closePath();
+    }
+
+    function paintCanvas(canvas, tower, skinEntry) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height, cx = W / 2, cy = H / 2;
+      const t = Date.now(), isVoid = tower.id === 'void', size = 42;
+      const drawY = cy + Math.sin(t * 0.00188) * 8;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // shadow
+      ctx.save(); ctx.beginPath();
+      ctx.ellipse(cx, cy + size + 6, size * 0.9, size * 0.175, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fill(); ctx.restore();
+
+      // orbit ring
+      ctx.save(); ctx.translate(cx, drawY); ctx.rotate(t * 0.00005);
+      ctx.strokeStyle = '#9A8C98'; ctx.lineWidth = 1; ctx.globalAlpha = 0.2;
+      ctx.beginPath(); ctx.ellipse(0, 0, size + 14, (size + 14) * 0.35, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+
+      if (isVoid) {
+        ctx.save(); ctx.translate(cx, drawY); ctx.rotate(-t * 0.00003);
+        ctx.strokeStyle = '#9d4edd'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.35;
+        drawShape(ctx, 0, 0, size * 1.6, 'hexagon'); ctx.stroke(); ctx.restore();
+      }
+
+      ctx.save(); ctx.translate(cx, drawY);
+      ctx.shadowBlur = 24; ctx.shadowColor = isVoid ? '#9d4edd' : 'rgba(242,233,228,0.3)';
+      ctx.fillStyle = isVoid ? '#3c096c' : '#4A4E69'; drawShape(ctx, 0, 0, size, tower.shape); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = isVoid ? '#9d4edd' : '#9A8C98'; ctx.lineWidth = 2.5; drawShape(ctx, 0, 0, size, tower.shape); ctx.stroke();
+      ctx.globalAlpha = 0.35 * (0.7 + 0.3 * Math.sin(t * 0.003));
+      ctx.fillStyle = isVoid ? '#e0aaff' : '#F2E9E4'; drawShape(ctx, 0, 0, size * 0.45, tower.shape); ctx.fill();
+      ctx.globalAlpha = 1; ctx.restore();
+
+      // accessory overlay
+      if (skinEntry) {
+        const acc = ALL_ACCESSORIES.find(a => a.id === skinEntry);
+        if (acc) {
+          ctx.save();
+          ctx.font = `${size * 1.55}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.translate(cx, drawY); ctx.rotate(Math.sin(t * 0.001) * 3 * Math.PI / 180);
+          ctx.fillText(acc.icon, 0, 0); ctx.restore();
+        }
+      }
+    }
+
+    const canvasShop = document.getElementById('canvas-shop');
+    const canvasInv = document.getElementById('canvas-inv');
+
+    function animLoop() {
+      paintCanvas(canvasShop, selectedTowerShop, equippedSkins[selectedTowerShop.id] ?? null);
+      paintCanvas(canvasInv, selectedTowerInv, equippedSkins[selectedTowerInv.id] ?? null);
+      requestAnimationFrame(animLoop);
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  SHOP RENDERING
+    // ═══════════════════════════════════════════════════
+    const LOOM = `<svg class="loom-icon" viewBox="0 0 563 562" fill="currentColor"><g transform="translate(-1261,-14)"><path d="M1530.5,574.5C1513.4,570.6 1501.5,562.9 1494.8,551.1C1493.5,548.8 1491.6,546.7 1490.5,546.5C1472.1,542.2 1427.4,541.1 1393,544.1C1366,546.4 1316.8,554.8 1282.8,562.9C1268.8,566.3 1266.8,566.1 1263.1,561.4L1261,558.7L1261,315.1C1261,150.6 1261.3,70.3 1262,67.8C1263.8,61.6 1265.5,61 1281.6,61C1289.4,61 1296.5,60.7 1297.4,60.4C1298.8,59.9 1299,57.6 1299,45.8C1299,29.9 1299.9,26.8 1305.2,25.1C1313.9,22.4 1350.1,16.9 1372.9,14.9C1390.3,13.4 1430.6,14.2 1446.5,16.5C1485.2,21.8 1516,33.9 1539,52.6L1546.6,58.7L1550.5,55.3C1556.6,50.2 1571.6,40.2 1579.1,36.4C1601.2,25.3 1624,18.9 1654.1,15.4C1673.3,13.2 1714.8,13.9 1739.5,16.9C1759,19.3 1784.3,23.5 1788.1,25.1C1792.4,26.8 1793,29.4 1793.3,45.5L1793.5,60.5L1808.8,60.8L1824,61.1L1824,565.9L1820.8,565.3C1819,565 1812.8,563.6 1807,562.3C1729.7,544.3 1667.1,538.5 1615.4,544.5C1608.3,545.4 1601.8,546.3 1601,546.5C1600.2,546.8 1598.7,548.8 1597.7,550.9C1593.2,560.7 1579.5,570 1563.6,574C1554.4,576.3 1539.8,576.5 1530.5,574.5Z"/></g></svg>`;
+
+    function renderShop() {
+      const grid = document.getElementById('shop-grid');
+      grid.innerHTML = '';
+      SHOP.forEach((item, idx) => {
+        const cfg = RARITY[item.rarity];
+        const isOwned = ownedItems.some(o => o.accessoryId === item.id && o.towerId === item.targetTower.id);
+        const isEquipped = equippedSkins[item.targetTower.id] === item.id;
+
+        let btn;
+        if (!isOwned) btn = `<button class="buy-btn purchasable" data-idx="${idx}">${LOOM} ${item.cost}</button>`;
+        else if (isEquipped) btn = `<button class="buy-btn equipped"    data-idx="${idx}">✓ EQUIPPED</button>`;
+        else btn = `<button class="buy-btn owned"       data-idx="${idx}">USE SKIN</button>`;
+
+        const card = document.createElement('div');
+        card.className = 'shop-card';
+        card.innerHTML = `
+      <div class="card-glow" style="background:${item.color}"></div>
+      <div class="card-top">
+        <div class="item-icon" style="background:${item.color}22;border-color:${item.color}33">${item.icon}</div>
+        <div class="card-badges">
+          <span class="rarity-badge" style="color:${cfg.text};border-color:${cfg.border};background:${cfg.bg}">${item.rarity}</span>
+          <span class="for-badge">FOR: ${item.targetTower.name.toUpperCase()}</span>
+        </div>
+      </div>
+      <div class="card-name">${item.name}</div>
+      <div class="card-desc">"${item.desc}"</div>
+      ${btn}
+    `;
+        grid.appendChild(card);
+      });
+
+      document.querySelectorAll('#shop-grid [data-idx]').forEach(b => {
+        b.onclick = () => {
+          const idx = parseInt(b.dataset.idx);
+          if (b.classList.contains('purchasable')) handleBuy(idx);
+          else toggleSkin(SHOP[idx].id, SHOP[idx].targetTower.id);
+        };
+      });
+    }
+
+    function handleBuy(idx) {
+      const item = SHOP[idx];
+      if (loomlars < item.cost) { flash('Not enough Loomlars!', 'error'); return; }
+      loomlars -= item.cost;
+      ownedItems.push({ accessoryId: item.id, towerId: item.targetTower.id });
+      renderLoomlars();
+      updateInvCount();
+      scheduleSave();
+      flash(`${item.name} purchased!`, 'success');
+      renderShop();
+      renderInventory();
+    }
+
+    function flash(text, type) {
+      const el = document.getElementById('purchase-msg');
+      el.textContent = text; el.className = `show ${type}`;
+      clearTimeout(_msgTimer);
+      _msgTimer = setTimeout(() => el.className = '', 2800);
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  EQUIP SYSTEM (shared by shop + inventory)
+    // ═══════════════════════════════════════════════════
+    function toggleSkin(accessoryId, towerId) {
+      const already = equippedSkins[towerId] === accessoryId;
+      if (already) {
+        delete equippedSkins[towerId];
+      } else {
+        equippedSkins[towerId] = accessoryId;
+        // Point preview canvases to this tower
+        const tow = TOWERS.find(t => t.id === towerId);
+        if (tow) { selectedTowerShop = tow; selectedTowerInv = tow; }
+        updatePickerHighlights();
+      }
+      scheduleSave();
+      renderShop();
+      renderInventory();
+      renderAllStatuses();
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  INVENTORY RENDERING
+    // ═══════════════════════════════════════════════════
+    function renderInventory() {
+      const grid = document.getElementById('inv-grid');
+      grid.innerHTML = '';
+
+      const fullItems = ownedItems.map(o => {
+        const acc = ALL_ACCESSORIES.find(a => a.id === o.accessoryId);
+        const tow = TOWERS.find(t => t.id === o.towerId);
+        return (acc && tow) ? { ...acc, targetTower: tow } : null;
+      }).filter(Boolean);
+
+      const filtered = invFilter === 'all' ? fullItems : fullItems.filter(i => i.rarity === invFilter);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="inv-empty">${ownedItems.length === 0
+            ? 'No items yet — visit the shop!'
+            : 'No items match this filter.'
+          }</div>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const cfg = RARITY[item.rarity];
+        const isEquipped = equippedSkins[item.targetTower.id] === item.id;
+        const card = document.createElement('div');
+        card.className = 'inv-card' + (isEquipped ? ' active-equip' : '');
+        card.innerHTML = `
+      ${isEquipped ? '<span class="inv-equip-badge">Equipped</span>' : ''}
+      <div class="inv-card-glow" style="background:${item.color}"></div>
+      <span class="inv-icon">${item.icon}</span>
+      <div class="inv-name">${item.name}</div>
+      <div class="inv-meta">
+        <span class="inv-rarity" style="color:${cfg.text}">${item.rarity}</span>
+        <span class="inv-tower">▸ ${item.targetTower.name}</span>
+      </div>
+    `;
+        card.onclick = () => toggleSkin(item.id, item.targetTower.id);
+        grid.appendChild(card);
+      });
+    }
+
+    // Filters
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.onclick = () => {
+        invFilter = btn.dataset.filter;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+        renderInventory();
+      };
+    });
+
+    // ═══════════════════════════════════════════════════
+    //  TOWER PICKERS
+    // ═══════════════════════════════════════════════════
+    function buildPickers() {
+      ['picker-shop', 'picker-inv'].forEach(id => {
+        const el = document.getElementById(id);
+        el.innerHTML = '';
+        const isShop = id === 'picker-shop';
+        TOWERS.forEach(t => {
+          const btn = document.createElement('button');
+          const sel = isShop ? selectedTowerShop : selectedTowerInv;
+          btn.className = 'tower-pick-btn' + (t.id === sel.id ? ' active' : '');
+          btn.textContent = t.name; btn.dataset.tid = t.id;
+          btn.onclick = () => {
+            if (isShop) { selectedTowerShop = t; }
+            else { selectedTowerInv = t; }
+            updatePickerHighlights();
+            renderAllStatuses();
+          };
+          el.appendChild(btn);
+        });
+      });
+    }
+
+    function updatePickerHighlights() {
+      document.querySelectorAll('#picker-shop .tower-pick-btn').forEach(b => b.classList.toggle('active', b.dataset.tid === selectedTowerShop.id));
+      document.querySelectorAll('#picker-inv  .tower-pick-btn').forEach(b => b.classList.toggle('active', b.dataset.tid === selectedTowerInv.id));
+    }
+
+    function renderAllStatuses() {
+      const shopEq = equippedSkins[selectedTowerShop.id];
+      const invEq = equippedSkins[selectedTowerInv.id];
+
+      const sShop = document.getElementById('status-shop');
+      const sInv = document.getElementById('status-inv');
+
+      if (shopEq) {
+        const acc = ALL_ACCESSORIES.find(a => a.id === shopEq);
+        sShop.textContent = `${acc?.name ?? shopEq} ACTIVE`;
+        sShop.className = 'skin-status active-skin';
+      } else {
+        sShop.textContent = 'No skin equipped'; sShop.className = 'skin-status';
+      }
+
+      if (invEq) {
+        const acc = ALL_ACCESSORIES.find(a => a.id === invEq);
+        sInv.textContent = `${acc?.name ?? invEq} ACTIVE`;
+        sInv.className = 'skin-status active-skin';
+      } else {
+        sInv.textContent = 'No skin equipped'; sInv.className = 'skin-status';
+      }
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════════════════════
+    (async () => {
+      renderShop();
+      buildPickers();
+      renderAllStatuses();
+      renderLoomlars();
+      animLoop();
+
+      await restoreSession();
+      await loadProfile();
+      buildPickers(); // rebuild after tower state restored
+    })();
+  </script>
+</body>
+
+</html>

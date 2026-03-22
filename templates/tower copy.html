@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>loom - tower defense</title>
+    <link rel="icon" href="{{ url_for('static', filename='.module/favicon.ico') }}" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Vazirmatn:wght@100..900&display=swap"
+        rel="stylesheet">
+
+    <!-- Cursor -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='.module/cursor/style.css') }}">
+    <script src="{{ url_for('static', filename='.module/cursor/script.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js"></script>
+
+    <style>
+        :root {
+            --dark: #22223B;
+            --light: #F2E9E4;
+            --accent: #9A8C98;
+            --muted: #4A4E69;
+            --font-mono: "Roboto Mono", "Vazirmatn", monospace;
+            --font-roboto: "Roboto", sans-serif;
+        }
+
+        * {
+            cursor: none !important;
+            user-select: none !important;
+        }
+
+        *::-webkit-scrollbar {
+            display: none;
+        }
+
+        .answer:hover {
+            background-color: var(--light) !important;
+            color: var(--dark) !important;
+        }
+
+        body {
+            background-color: var(--dark);
+            color: var(--light);
+            font-family: var(--font-mono);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        canvas {
+            background: #1a1a2e;
+            border: 1px solid var(--muted);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .ui-panel {
+            background: var(--dark);
+            border: 1px solid var(--muted);
+        }
+
+        .upgrade-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.3rem 0.2rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--muted);
+            color: var(--light);
+        }
+
+        .upgrade-card:hover:not(:disabled) {
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .upgrade-card:disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+        }
+
+        .tower-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.4rem 0.25rem;
+            font-weight: bold;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 10px;
+            cursor: grab;
+            transition: all 0.15s;
+            background: var(--dark);
+            color: var(--accent);
+        }
+
+        .tower-btn:active {
+            cursor: grabbing;
+        }
+
+        .tower-btn:hover:not(:disabled) {
+            background-color: var(--light);
+            color: var(--dark);
+        }
+
+        .tower-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .tower-btn .tower-cost {
+            opacity: 0.5;
+            font-size: 9px;
+            margin-top: 1px;
+        }
+
+        .tower-btn .tower-name {
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        h1,
+        h2,
+        h3,
+        button,
+        div,
+        span,
+        p {
+            font-family: var(--font-mono) !important;
+        }
+
+        @keyframes calm-wiggle {
+
+            0%,
+            100% {
+                transform: rotate(-1.2deg) translateY(0);
+            }
+
+            50% {
+                transform: rotate(1.2deg) translateY(-2px);
+            }
+        }
+
+        .wiggle-element {
+            animation: calm-wiggle 6s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        .delay-1 {
+            animation-delay: -1.5s;
+        }
+
+        .delay-2 {
+            animation-delay: -3s;
+        }
+
+        .delay-3 {
+            animation-delay: -4.5s;
+        }
+
+        .logo-container {
+            display: inline-block;
+            animation: calm-wiggle 7s ease-in-out infinite;
+        }
+
+        .logo-container svg {
+            filter: drop-shadow(0 0 2px rgba(242, 233, 228, 0.1));
+        }
+
+        #quiz-overlay {
+            transition: transform 0.25s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.2s ease;
+            transform: translateY(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #quiz-overlay.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .fast-pulse {
+            animation: pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.3
+            }
+        }
+
+        /* ── SKIN INDICATOR on tower button ── */
+        .skin-dot-inline {
+            color: #F5C842;
+            font-size: 8px;
+            text-shadow: 0 0 4px #F5C842;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="cursor" hidden>
+        <div class="cursor__ball cursor__ball--big">
+            <svg height="30" width="30">
+                <circle cx="15" cy="15" r="12" stroke-width="0"></circle>
+            </svg>
+        </div>
+        <div class="cursor__ball cursor__ball--small">
+            <svg height="10" width="10">
+                <circle cx="5" cy="5" r="4" stroke-width="0"></circle>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Game Header -->
+    <div class="w-full max-w-6xl flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+        <div class="flex items-center gap-6">
+            <a href="/dashboard">
+                <div class="logo-container hoverable">
+                    <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="10em" height="auto"
+                        viewBox="0 0 1824 576" preserveAspectRatio="xMidYMid meet">
+                        <g fill="var(--light)">
+                            <path
+                                d="M774.2 574 c-39.5 -6.2 -76.1 -20.6 -112.7 -44.5 -15.8 -10.2 -32.2 -24.3 -38.6 -32.9 -5.9 -7.9 -2.5 -17.3 7.6 -21.2 5.1 -1.9 10.2 -1.3 15 1.6 1.7 1.1 7.5 6.7 13 12.6 12.4 13.4 21.8 21.4 35.9 30.8 31.4 20.8 67.5 33 105.2 35.5 44.6 3 84.9 -10.4 105.2 -34.9 2.9 -3.6 7.2 -8.7 9.4 -11.4 4.8 -5.6 8.8 -7.6 15.5 -7.6 9.6 0 14.6 6.3 12.3 15.2 -0.9 3.3 -2.9 6 -8.9 11.7 -23.6 22.7 -59.4 39.1 -98.3 45 -17.4 2.7 -43.9 2.7 -60.6 0.1z" />
+                            <path
+                                d="M1530.5 574.5 c-17.1 -3.9 -29 -11.6 -35.7 -23.4 -1.3 -2.3 -3.2 -4.4 -4.3 -4.6 -18.4 -4.3 -63.1 -5.4 -97.5 -2.4 -27 2.3 -76.2 10.7 -110.2 18.8 -14 3.4 -16 3.2 -19.7 -1.5 l-2.1 -2.7 0 -243.6 c0 -164.5 0.3 -244.8 1 -247.3 1.8 -6.2 3.5 -6.8 19.6 -6.8 7.8 0 14.9 -0.3 15.8 -0.6 1.4 -0.5 1.6 -2.8 1.6 -14.6 0 -15.9 0.9 -19 6.2 -20.7 8.7 -2.7 44.9 -8.2 67.7 -10.2 17.4 -1.5 57.7 -0.7 73.6 1.6 38.7 5.3 69.5 17.4 92.5 36.1 l7.6 6.1 3.9 -3.4 c6.1 -5.1 21.1 -15.1 28.6 -18.9 22.1 -11.1 44.9 -17.5 75 -21 19.2 -2.2 60.7 -1.5 85.4 1.5 19.5 2.4 44.8 6.6 48.6 8.2 4.3 1.7 4.9 4.3 5.2 20.4 l0.2 15 15.3 0.3 15.2 0.3 0 252.4 0 252.4 -3.2 -0.6 c-1.8 -0.3 -8 -1.7 -13.8 -3 -77.3 -18 -139.9 -23.8 -191.6 -17.8 -7.1 0.9 -13.6 1.8 -14.4 2 -0.8 0.3 -2.3 2.3 -3.3 4.4 -4.5 9.8 -18.2 19.1 -34.1 23.1 -9.2 2.3 -23.8 2.5 -33.1 0.5z m24.4 -15.5 c14 -1.8 24.1 -8.3 29.2 -18.5 1.7 -3.6 3.7 -6.9 4.4 -7.5 4.3 -3.6 38.3 -7 70.6 -7 44.3 0 84.6 4.9 136.6 16.6 8.3 1.9 15.8 3.4 16.7 3.4 1.5 0 1.6 -20.9 1.6 -233.9 l0 -233.9 -9.2 -0.4 c-5.1 -0.3 -9.6 -0.3 -10 -0.1 -0.5 0.2 -0.8 97 -0.8 215.1 0 144.7 -0.3 215.9 -1 218.4 -1.2 4.2 -4.2 6.8 -7.8 6.8 -1.3 0 -9 -1.8 -17.1 -4 -40.1 -10.8 -69.5 -15.2 -101.6 -15.3 -24.3 0 -35 1.2 -54 6.3 -22.5 6 -39.2 14.3 -59.3 29.7 -6.3 4.8 -8.6 4.4 -17.2 -2.8 -2.5 -2 -8.5 -6.2 -13.5 -9.2 -37.9 -22.9 -82.3 -29.4 -141.5 -20.6 -15.9 2.4 -45.2 8.7 -60 12.9 -12.9 3.7 -16.3 3.8 -19.5 0.5 l-2.5 -2.4 0 -217.5 0 -217.4 -7.2 -0.7 c-4 -0.4 -8.6 -0.5 -10.3 -0.3 l-3 0.3 -0.3 234.4 -0.2 234.4 3.7 -0.6 c2.1 -0.3 12.4 -2.4 22.8 -4.7 51.9 -11.3 91.4 -15.6 137.8 -14.7 27.6 0.5 55.9 3.1 60.7 5.7 1 0.5 2.8 3.1 4 5.7 5.9 12.7 15.1 18.8 32.5 21.3 7 1 7.2 1 15.4 0z m9.5 -52.5 c18.3 -11 42.8 -19.3 67.7 -23.1 15.7 -2.4 50.1 -2.4 69.9 0 19.2 2.3 37 5.6 56.5 10.6 8.8 2.2 16.6 4 17.3 4 0.9 0 1.2 -46.5 1.2 -229 0 -125.9 -0.1 -229 -0.3 -229 -0.1 0 -4.9 -0.9 -10.7 -2 -41.5 -7.9 -87.3 -9.6 -121.5 -4.5 -33.6 5.1 -65.2 18.5 -83.7 35.7 l-5.7 5.3 -0.3 218.8 c-0.2 120.3 -0.2 218.7 0 218.7 0.2 0 4.5 -2.5 9.6 -5.5z m-26.4 -213 l0 -217.5 -3.7 -4 c-5.7 -6.3 -17.9 -15.1 -29.1 -20.9 -36.5 -18.7 -90.7 -25.1 -149.7 -17.6 -15.7 2.1 -35.4 5.4 -38.2 6.5 l-2.3 1 0 229 c0 217.8 0.1 229.1 1.8 228.6 15.2 -4.8 53.2 -12.7 73.7 -15.2 19.5 -2.5 54.8 -2.5 70.4 -0.1 24.6 3.9 50.7 12.7 66.9 22.7 4.2 2.6 8.3 4.8 9 4.9 0.9 0.1 1.2 -44 1.2 -217.4z" />
+                            <path
+                                d="M1617.9 396.8 c-0.3 -27.1 0.5 -32.5 5.7 -39.4 4.3 -5.6 10.5 -8.6 18.8 -9.2 12.7 -0.8 21.3 3.5 26.3 13 2.5 4.8 2.8 6.5 3.1 18.6 l0.4 13.2 16.9 0 16.9 0 0 6 0 6 -44 0 -44 0 -0.1 -8.2z m42.9 -15.7 c-0.3 -10.2 -0.6 -12.4 -2.4 -14.7 -5.3 -7.2 -13.7 -9.2 -21.4 -5.2 -6.9 3.6 -8.4 7.1 -8.9 20.6 l-0.3 11.2 16.7 0 16.7 0 -0.4 -11.9z" />
+                            <path
+                                d="M1611 317.5 l0 -14.5 42.5 0 42.5 0 0 -9 0 -9 4.9 0 c2.8 0 5.2 0.4 5.5 0.8 0.2 0.4 0.2 11 -0.1 23.5 l-0.6 22.7 -4.8 0 -4.8 0 -0.3 -8.7 -0.3 -8.8 -36.7 -0.3 -36.8 -0.2 0 9 0 9 -5.5 0 -5.5 0 0 -14.5z" />
+                            <path
+                                d="M1679.9 269.5 c-9.9 -3.1 -14.9 -13 -15.3 -29.8 l-0.2 -9.2 -4.1 0.1 c-5.2 0.1 -9.1 2.6 -10.9 6.9 -3 7.3 -0.6 16.7 4.9 19.3 2.5 1.2 2.7 1.8 2.7 6.8 0 6.1 -0.4 6.3 -6.6 3.5 -4.9 -2.2 -9.7 -7.8 -11.3 -13 -1.4 -4.9 -1.4 -15.8 0 -20.2 1.8 -5.2 5.6 -9.7 10.2 -12.1 3.9 -2.1 5.9 -2.3 29.2 -2.8 13.8 -0.3 25.6 -0.9 26.3 -1.3 0.9 -0.6 1.2 0.6 1.2 5.2 0 5.7 -0.1 6.1 -2.3 6.1 -3.7 0 -3.8 1 -0.5 5.8 2.5 3.6 3.2 5.8 3.6 11.2 0.5 8 -0.8 12.8 -5.1 17.6 -5.5 6.4 -13.5 8.5 -21.8 5.9z m12.4 -12.6 c6.3 -4.9 5.4 -17.2 -1.8 -23.9 -2.1 -2 -3.9 -2.5 -9.7 -2.8 l-7 -0.4 0.4 9.8 c0.3 6.7 1 10.9 2.1 13.1 3.2 6.1 11.1 8.1 16 4.2z" />
+                            <path
+                                d="M1639 199.1 l0 -5.9 12.6 -5.2 c6.9 -2.8 16.7 -6.7 21.7 -8.7 5.1 -1.9 10.3 -3.9 11.7 -4.5 2.3 -0.9 1.3 -1.5 -10 -6 -6.9 -2.7 -17.7 -6.9 -24 -9.3 l-11.5 -4.3 -0.3 -6.1 c-0.2 -3.5 0.1 -6.1 0.7 -6.1 1.4 0 63.2 25.5 73.6 30.4 13.2 6.2 18.5 13.2 18.5 24.5 l0 4.1 -5 0 c-4.7 0 -5 -0.2 -5 -2.5 0 -6.8 -5.1 -12.8 -14.2 -17 l-5.8 -2.6 -18.7 7.6 c-10.4 4.3 -24.2 9.9 -30.8 12.6 -6.5 2.7 -12.3 4.9 -12.7 4.9 -0.4 0 -0.8 -2.7 -0.8 -5.9z" />
+                            <path
+                                d="M1372 427 l0 -6 39.5 0 39.5 0 0 -19.5 0 -19.5 5.5 0 5.5 0 0 25.5 0 25.5 -45 0 -45 0 0 -6z" />
+                            <path
+                                d="M1416.3 367.5 c-16.4 -4.5 -25.2 -19 -21.2 -35 1.4 -5.4 7.6 -12.8 13.1 -15.6 4.2 -2.2 19.5 -4.6 22.2 -3.6 1.4 0.6 1.6 3.1 1.6 22.2 l0 21.5 2.8 0 c4.4 -0.1 10.7 -3.5 13.7 -7.5 5.3 -6.8 4.5 -18 -1.7 -25.1 l-3.1 -3.5 2.4 -2.7 c1.3 -1.5 2.7 -3.1 3 -3.5 1 -1.3 8.8 6.2 11.1 10.7 2.9 5.7 3.6 16.8 1.4 23.3 -1.9 5.7 -7 12.1 -12.1 15.3 -7.8 4.8 -22.5 6.4 -33.2 3.5z m5.7 -26.5 c0 -15.8 0 -16 -2.2 -16 -3.3 0 -10.1 3.7 -12.2 6.7 -1.1 1.4 -2.1 4.7 -2.4 7.3 -0.6 6.8 1.8 11.4 8.2 15.1 8.8 5 8.6 5.3 8.6 -13.1z" />
+                            <path
+                                d="M1436.1 297.6 c-10.2 -3.4 -14.3 -10.9 -14.9 -27.8 -0.4 -11.7 -0.5 -11.8 -2.9 -11.8 -3.7 0 -8.8 2.5 -11.1 5.5 -4.3 5.5 -2.2 18.5 3.4 21.6 2.4 1.2 2.5 1.7 1.9 6.4 -0.4 2.7 -0.9 5.1 -1 5.3 -0.6 0.7 -8.1 -3 -10.3 -5.1 -6 -5.6 -8.7 -17.5 -6.2 -27.7 1.6 -6.8 8.5 -14.3 14.5 -15.8 2.2 -0.6 14.9 -1.2 28.3 -1.4 l24.2 -0.3 0 5.3 c0 5.1 -0.1 5.2 -2.9 5.2 -3.8 0 -4.6 1.3 -2.2 3.4 1.1 1 2.9 4.1 4.1 6.9 2.9 6.6 2.4 15.5 -1.1 21.7 -4.4 7.7 -14.7 11.5 -23.8 8.6z m13.6 -14.1 c4.4 -5.1 2.4 -17.5 -3.7 -23 -1.7 -1.6 -3.6 -2 -8.9 -2 l-6.6 0 0.1 9 c0.1 10.2 2 15.6 6.3 18.1 3.8 2.1 10.1 1.1 12.8 -2.1z" />
+                            <path
+                                d="M1395 216.5 l0 -5.5 4.6 0 4.7 0 -4.1 -4.4 c-2.3 -2.5 -4.4 -5.7 -4.7 -7.3 -0.4 -1.5 -0.9 -3.4 -1.1 -4.2 -0.3 -0.8 -0.2 -4.1 0.2 -7.3 l0.7 -5.9 5.5 0.3 5.6 0.3 0 9.2 c0.1 9.9 1.1 12.4 7 16.7 2.5 2 4.3 2.1 25.7 2.4 l22.9 0.3 0 5.5 0 5.4 -33.5 0 -33.5 0 0 -5.5z" />
+                            <path
+                                d="M1395 158.5 l0 -5.5 3.6 0 3.5 0 -2.7 -3.5 c-9.9 -13 -5.5 -31.6 8.4 -35.5 2.1 -0.5 14.7 -1 29 -1 l25.2 0 0 5.5 0 5.5 -24 0 c-25.8 0 -28 0.4 -31.4 5.2 -2 2.9 -2.1 12 -0.1 15.7 0.8 1.6 2.8 4 4.5 5.5 l3.2 2.6 23.9 0 23.9 0 0 5.5 0 5.5 -33.5 0 -33.5 0 0 -5.5z" />
+                            <path
+                                d="M0.7 521.3 c-0.4 -0.3 -0.7 -3.9 -0.7 -7.9 0 -8.5 0.1 -8.6 10.8 -10.9 10 -2.1 18.3 -5.4 21.3 -8.6 3.9 -4.2 5.8 -12.6 7 -30.9 1.5 -24.2 0.6 -392.6 -1 -404 -1.5 -11 -2.8 -14.9 -5.9 -18.2 -2.7 -2.9 -10.8 -5.9 -20.7 -7.8 -11.7 -2.1 -10.5 -0.9 -10.5 -11.1 l0 -9.1 14.3 0.8 c18.4 1 84 1 102.5 0 l14.2 -0.8 0 8.5 c0 4.7 -0.4 8.8 -0.8 9.1 -0.5 0.3 -5.3 1.5 -10.8 2.7 -17.2 3.6 -21.3 6.4 -23.8 16.3 -3.9 14.9 -4.1 26.1 -4.1 234.8 0 110.9 0.3 202 0.7 202.3 2.7 2.7 106.7 4 128.3 1.6 14.7 -1.6 28.8 -5.1 35.7 -8.8 12.7 -6.8 25.2 -22.5 34.2 -42.8 2.7 -6 5.3 -11.6 5.9 -12.2 1 -1.4 10.2 -1.8 15.5 -0.7 5.3 1.1 5.6 -1.9 -5.3 56 -3.6 18.7 -7 35.8 -7.7 38 l-1.3 3.9 -148.6 0.3 c-81.7 0.1 -148.9 -0.1 -149.2 -0.5z" />
+                            <path
+                                d="M1049.1 470.9 c-40.7 -4.3 -82.3 -23.1 -119.6 -54 -26.7 -22.2 -55.9 -56.1 -74.3 -86.1 -9.6 -15.7 -19.4 -40.8 -22.9 -58.8 -2.8 -14.5 -2.5 -52.6 0.5 -66.6 8 -37.1 28.2 -69.8 60.3 -98 26.4 -23.2 59 -41.7 107.9 -61.2 30 -12 67.4 -25.2 71.5 -25.2 5.7 0 8.4 5.5 4.8 9.9 -1.2 1.4 -9.3 4.9 -22.3 9.7 -18.7 6.8 -20 7.5 -14.5 6.9 44.7 -4.1 82.7 1.5 112.9 16.7 30.3 15.2 52.4 37.3 67.4 67.3 14.2 28.5 22.6 72.2 20.8 108.5 -2.8 54.1 -17.7 105.6 -43.1 148.5 -17.2 29 -36.9 51.5 -55.4 63 -26 16.2 -58.9 23 -94 19.4z m47.9 -18.8 c11.7 -2.7 19 -5.4 27.9 -10.2 27.6 -14.9 52 -45.1 72.6 -89.9 25.2 -55.2 32.9 -118.4 21 -173.5 -5.7 -26.5 -15.4 -46.9 -32.1 -67.5 -13.5 -16.8 -36.5 -32.1 -60.3 -40.4 -37.9 -13.2 -89.6 -12.1 -136.1 2.9 -63.1 20.4 -113.7 63.3 -133.4 113 -12.5 31.8 -13.4 67.9 -2.5 101 8.1 24.5 23.3 49.4 47 77.1 41.1 48 91 79.8 137.9 87.8 14.7 2.5 14.5 2.5 32.5 2.1 12.5 -0.3 19.3 -0.9 25.5 -2.4z" />
+                            <path
+                                d="M1039.9 299.3 l-5.4 -3.8 -11 0 c-6 0 -17.5 0.4 -25.5 0.9 -14.3 0.8 -14.6 0.8 -18 -1.5 -2 -1.4 -4.6 -4.6 -6 -7.4 -2.1 -4.3 -2.5 -6.4 -2.5 -14.5 0 -7.8 0.4 -10.4 2.4 -14.8 2.8 -6.3 7.8 -10.9 12.7 -11.8 5.9 -1.1 28 0.4 38.2 2.5 18.4 3.9 28.1 9.1 32.4 17.4 2.6 5.2 3.5 16.9 1.8 25 -2.5 12.1 -9.2 14.9 -19.1 8z" />
+                            <path
+                                d="M496.5 446.3 c-29.3 -3.7 -59.8 -14.7 -83.5 -30 -47.8 -31 -77.1 -78.5 -86.6 -140.3 -2.1 -14 -2.4 -45.9 -0.6 -60 3.5 -26.1 11.9 -53.3 23.7 -76.5 20.1 -39.7 45.7 -68.7 82.6 -93.7 28.4 -19.3 68.9 -36.6 100.7 -43.2 11.6 -2.5 13.9 -2.6 43.1 -2.6 38.1 0 42.6 0.7 76.3 11.6 14.1 4.6 16.8 6.4 16.8 10.9 0 1.1 -0.7 3.1 -1.6 4.3 -2.3 3.3 -7.5 2.9 -22.2 -1.7 -25.5 -8 -40.5 -10.8 -61.7 -11.7 -34.2 -1.5 -64.4 5.6 -106.9 25 -4.4 2 -7.7 3.8 -7.5 4.1 0.3 0.2 3.1 -0.5 6.4 -1.6 42.7 -14.2 111.4 -15.4 160.2 -3 58.6 15 102.5 46.5 125.8 90.4 5.1 9.6 11.6 28.5 13.8 40.2 3.7 19.4 3 42.3 -1.9 64.2 -8.6 38.4 -23.6 68.6 -51.9 104.2 -47.5 59.5 -110.8 99.3 -172.7 108.5 -9.7 1.5 -43.4 2.1 -52.3 0.9z m53 -17.4 c47.8 -7.9 91.3 -32.2 134.7 -75.1 35.6 -35.3 61.6 -78.4 70.9 -117.3 19.7 -83.1 -22 -149.9 -112.2 -179.6 -27.9 -9.2 -50.1 -12.3 -86.4 -12.3 -37.1 0.1 -56.6 3 -85.6 13 -19.7 6.8 -26.5 9.8 -40.2 18.1 -29.1 17.5 -50.3 41.3 -66.7 74.8 -14.5 29.6 -20.6 54.5 -21.7 87.6 -0.6 20.4 0.2 30.7 4.3 50.2 6.6 31.4 22.3 62.6 43 85.5 16.3 18 43.1 36.5 64.9 44.8 32.6 12.3 63.1 15.7 95 10.3z" />
+                            <path
+                                d="M565.9 278.8 l-5.3 -4.3 -26.3 0.3 c-30.6 0.4 -31.7 0.1 -35.4 -7.6 -3.1 -6.3 -3.7 -17.9 -1.4 -25.8 3.4 -11.8 7.3 -14.5 21.6 -15.2 16.7 -0.8 38.6 2.8 50.4 8.2 12.3 5.6 17 13.3 16.9 27.7 -0.1 19.7 -8.3 26.3 -20.5 16.7z" />
+                        </g>
+                    </svg>
+                </div>
+            </a>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="flex gap-8 text-xl font-bold" style="color: var(--accent)">
+                <div id="gold-display" class="wiggle-element delay-1">CREDITS: 150</div>
+                <div id="health-display" class="wiggle-element delay-2">INTEGRITY: 20</div>
+                <div id="wave-display" class="opacity-60 wiggle-element delay-3">WAVE: 1</div>
+            </div>
+            <div class="flex items-center gap-2 pl-6 border-l border-white/10">
+                <button id="quiz-trigger-btn" onclick="triggerGeminiQuiz()"
+                    class="hoverable wiggle-element delay-2 px-4 py-2 border font-bold uppercase tracking-tighter text-xs transition"
+                    style="border-color:var(--accent);color:var(--accent);">QUESTIONS</button>
+                <button id="start-btn" onclick="startWave()"
+                    class="hoverable wiggle-element px-6 py-2 border font-black text-sm transition"
+                    style="background:var(--light);color:var(--dark);border-color:var(--light);">START</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-row gap-4 w-full max-w-6xl h-[500px]">
+        <!-- Canvas -->
+        <div class="relative group overflow-hidden">
+            <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+            <!-- Quiz overlay -->
+            <div id="quiz-overlay" class="absolute inset-0 bg-black/90 flex items-center justify-center p-8 z-50">
+                <div id="quiz-content" class="relative p-8 border border-white max-w-md w-full text-center"
+                    style="background:var(--dark);border-color:var(--light);">
+                    <button onclick="closeQuiz()"
+                        class="hoverable absolute top-2 right-4 text-xl opacity-50 hover:opacity-100 transition">✕</button>
+                    <div id="quiz-loading" class="py-8">
+                        <p class="text-xl fast-pulse uppercase tracking-widest">Decryption in progress...</p>
+                    </div>
+                    <div id="quiz-actual" class="hidden">
+                        <h2 class="text-2xl font-bold mb-4 italic uppercase">Intel Injection</h2>
+                        <p id="question-text" class="text-lg mb-6 font-medium"></p>
+                        <div id="options-container" class="grid grid-cols-1 gap-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game over -->
+            <div id="game-over" class="hidden absolute inset-0 bg-black/90 flex items-center justify-center z-[60]">
+                <div class="text-center">
+                    <h2 class="text-6xl font-bold mb-8 uppercase tracking-widest" style="color:var(--light)">System
+                        Failure</h2>
+                    <button onclick="location.reload()" class="hoverable px-12 py-4 border font-bold transition"
+                        style="border-color:var(--light);color:var(--light);background:transparent;">REBOOT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right panel -->
+        <div class="w-80 flex flex-col gap-3 pr-1">
+            <div class="ui-panel p-3 shrink-0">
+                <h3 class="font-bold text-[10px] mb-2 uppercase tracking-widest opacity-50">TOWERS</h3>
+                <div class="grid grid-cols-2 gap-1.5" id="shop-grid"></div>
+            </div>
+
+            <div id="upgrade-panel" class="ui-panel px-2 py-2 shadow-2xl shrink-0 hidden">
+                <div class="flex justify-between items-center mb-2 border-b border-white/10 pb-1">
+                    <h3 id="sel-tower-name" class="font-bold text-[9px] uppercase tracking-wider opacity-80">
+                        UNIT_SELECTED</h3>
+                    <button onclick="deselectTower()"
+                        class="hoverable hover:text-red-400 font-bold text-xs leading-none">✕</button>
+                </div>
+                <div id="upgrade-controls" class="flex gap-1 mb-2">
+                    <button onclick="upgradeSelected('damage')" id="up-dmg" class="hoverable upgrade-card flex-1">
+                        <span id="up-dmg-label" class="text-[8px] uppercase opacity-60 leading-tight">PWR</span>
+                        <span id="up-dmg-text" class="font-bold text-[9px] uppercase leading-tight">L1</span>
+                        <span id="up-dmg-cost" class="text-[8px] font-bold leading-tight">100</span>
+                    </button>
+                    <button onclick="upgradeSelected('speed')" id="up-spd" class="hoverable upgrade-card flex-1">
+                        <span id="up-spd-label" class="text-[8px] uppercase opacity-60 leading-tight">SPD</span>
+                        <span id="up-spd-text" class="font-bold text-[9px] uppercase leading-tight">L1</span>
+                        <span id="up-spd-cost" class="text-[8px] font-bold leading-tight">100</span>
+                    </button>
+                    <button onclick="upgradeSelected('range')" id="up-rng" class="hoverable upgrade-card flex-1">
+                        <span id="up-rng-label" class="text-[8px] uppercase opacity-60 leading-tight">RNG</span>
+                        <span id="up-rng-text" class="font-bold text-[9px] uppercase leading-tight">L1</span>
+                        <span id="up-rng-cost" class="text-[8px] font-bold leading-tight">100</span>
+                    </button>
+                </div>
+                <div>
+                    <button onclick="sellSelected()"
+                        class="hoverable w-full py-1 border border-white/10 hover:bg-white hover:text-black text-[9px] font-bold uppercase transition">
+                        SCRAP (<span id="sell-price">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <div id="intel-panel" class="ui-panel p-3 shrink-0">
+                <h3 class="font-bold text-[10px] mb-2 uppercase tracking-widest opacity-50">WAVE INTEL</h3>
+                <div id="enemy-preview" class="text-[10px] space-y-1 opacity-80 italic">Ready for wave 1...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ════════════════════════════════════════════════════════════════════
+        //  CONFIG
+        // ════════════════════════════════════════════════════════════════════
+        const CEREBRAS_API_KEY = "csk-3d9d3kyd8xwxpxx95cvrkncmtjmyxnxyn6extedwkfedpe8e";
+        const SUPABASE_URL = "https://ypktiqorqpytqrfufbpj.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_r3U8mKoht6QE22lYTJ5D0Q_VqnT2bNm";
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ════════════════════════════════════════════════════════════════════
+        //  COSMETICS — loaded from Supabase profiles
+        //  equippedSkins: { towerId: accessoryId }
+        //  towerTypeToId maps towerTypes keys → shop TOWERS ids
+        // ════════════════════════════════════════════════════════════════════
+        const ALL_ACCESSORIES = [
+            { id: 'viking_helmet', icon: '🪖' },
+            { id: 'wizard_hat', icon: '🧙' },
+            { id: 'monocle', icon: '🧐' },
+            { id: 'cape_red', icon: '🧣' },
+            { id: 'glasses_cool', icon: '🕶️' },
+            { id: 'crown_gold', icon: '👑' },
+            { id: 'bunny_ears', icon: '🐰' },
+            { id: 'cyber_eye', icon: '👁️' },
+            { id: 'pirate_hat', icon: '🏴‍☠️' },
+            { id: 'halo', icon: '😇' },
+            { id: 'leaf_crown', icon: '🌿' },
+            { id: 'phoenix_wing', icon: '🔥' },
+            { id: 'void_mask', icon: '👺' },
+        ];
+
+        // Map from towerTypes key → shop tower id
+        // (shop uses: sentry=basic, sharp=sniper, frost=freeze, tesla, bomber, banker=miner, rail=railgun, void)
+        const TOWER_KEY_TO_SHOP_ID = {
+            basic: 'sentry',
+            sniper: 'sharp',
+            freeze: 'frost',
+            tesla: 'tesla',
+            bomber: 'bomber',
+            miner: 'banker',
+            railgun: 'rail',
+            void: 'void',
+        };
+
+        // Runtime cosmetics state — populated from Supabase
+        let equippedSkins = {};  // { shopTowerId: accessoryId }
+
+        function getEquippedIconForType(typeKey) {
+            const shopId = TOWER_KEY_TO_SHOP_ID[typeKey];
+            if (!shopId) return null;
+            const accId = equippedSkins[shopId];
+            if (!accId) return null;
+            const acc = ALL_ACCESSORIES.find(a => a.id === accId);
+            return acc ? acc.icon : null;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  GAME STATE
+        // ════════════════════════════════════════════════════════════════════
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let gold = 150, health = 20, wave = 0;
+        let isWaveActive = false;
+        let draggingTowerType = null;
+        let selectedTower = null;
+        let mouseX = 0, mouseY = 0;
+        let frameCount = 0;
+        let enemiesDefeatedTotal = 0;
+
+        const colors = {
+            dark: '#22223B', light: '#F2E9E4',
+            accent: '#9A8C98', muted: '#4A4E69', danger: '#C1121F'
+        };
+
+        let enemies = [], towers = [], projectiles = [], particles = [];
+
+        const trackWidth = 50;
+        const path = [
+            { x: 0, y: 100 }, { x: 600, y: 100 }, { x: 600, y: 400 },
+            { x: 100, y: 400 }, { x: 100, y: 250 }, { x: 800, y: 250 }
+        ];
+
+        const towerTypes = {
+            basic: { name: 'SENTRY', cost: 50, range: 120, damage: 2, fireRate: 35, shape: 'square' },
+            sniper: { name: 'SHARP', cost: 120, range: 250, damage: 8, fireRate: 85, shape: 'diamond' },
+            freeze: { name: 'FROST', cost: 80, range: 100, damage: 1, fireRate: 40, shape: 'hexagon' },
+            tesla: { name: 'TESLA', cost: 70, range: 90, damage: 1, fireRate: 12, shape: 'star' },
+            bomber: { name: 'BOMBER', cost: 130, range: 140, damage: 10, fireRate: 75, shape: 'octagon', effect: 'splash', splashRadius: 65 },
+            miner: { name: 'BANKER', cost: 100, range: 0, damage: 10, fireRate: 0, shape: 'circle', effect: 'income' },
+            railgun: { name: 'RAIL', cost: 350, range: 400, damage: 25, fireRate: 160, shape: 'triangle' },
+            void: { name: 'VOID', cost: 1000, range: 200, damage: 15, fireRate: 4, shape: 'star', effect: 'void' }
+        };
+
+        const enemyDefinitions = {
+            scout: { name: 'SCOUT', shape: 'triangle', speed: 2.2, hp: 10, color: '#9A8C98' },
+            basic: { name: 'DRONE', shape: 'circle', speed: 1.4, hp: 20, color: '#F2E9E4' },
+            tank: { name: 'TANK', shape: 'square', speed: 0.8, hp: 80, color: '#4A4E69' },
+            speedster: { name: 'PHANTOM', shape: 'star', speed: 3.5, hp: 15, color: '#FFD700', effect: 'ghost' },
+            shield: { name: 'AEGIS', shape: 'hexagon', speed: 1.0, hp: 60, color: '#4CC9F0', effect: 'shield' },
+            heavy: { name: 'TITAN', shape: 'octagon', speed: 0.6, hp: 200, color: '#1a1a2e' },
+            boss: { name: 'CENTRAL', shape: 'diamond', speed: 0.5, hp: 1200, color: '#C1121F' }
+        };
+
+        // ════════════════════════════════════════════════════════════════════
+        //  SHAPE DRAWING
+        // ════════════════════════════════════════════════════════════════════
+        function drawShape(ctx, x, y, size, shape, outlineOnly = false) {
+            ctx.beginPath();
+            switch (shape) {
+                case 'square':
+                    ctx.rect(x - size, y - size, size * 2, size * 2); break;
+                case 'diamond':
+                    ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size, y);
+                    ctx.lineTo(x, y + size * 1.2); ctx.lineTo(x - size, y); break;
+                case 'circle':
+                    ctx.arc(x, y, size, 0, Math.PI * 2); break;
+                case 'hexagon':
+                    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx.lineTo(x + size * Math.cos(a), y + size * Math.sin(a)); } break;
+                case 'triangle':
+                    ctx.moveTo(x, y - size * 1.2); ctx.lineTo(x + size * 1.2, y + size); ctx.lineTo(x - size * 1.2, y + size); break;
+                case 'octagon':
+                    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + Math.PI / 8; ctx.lineTo(x + size * Math.cos(a), y + size * Math.sin(a)); } break;
+                case 'star':
+                    for (let i = 0; i < 10; i++) { const r = (i % 2 === 0) ? size : size * 0.4, a = i * Math.PI / 5; ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)); } break;
+            }
+            ctx.closePath();
+            if (outlineOnly) ctx.stroke(); else ctx.fill();
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  SHOP / INIT
+        // ════════════════════════════════════════════════════════════════════
+        function initShop() {
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = '';
+            Object.keys(towerTypes).forEach(key => {
+                const t = towerTypes[key];
+                const btn = document.createElement('button');
+                btn.id = `btn-${key}`;
+                btn.className = 'tower-btn';
+                const shopId = TOWER_KEY_TO_SHOP_ID[key];
+                const hasSkin = !!(equippedSkins[shopId]);
+                if (hasSkin) btn.classList.add('has-skin');
+                btn.innerHTML = `<span class="tower-name">${t.name}${hasSkin ? ' <span class="skin-dot-inline">✦</span>' : ''}</span><span class="tower-cost">${t.cost}c</span>`;
+                btn.onmousedown = () => { if (gold >= t.cost) { draggingTowerType = key; deselectTower(); } };
+                grid.appendChild(btn);
+            });
+        }
+
+        function isOnPath(x, y) {
+            for (let i = 0; i < path.length - 1; i++) {
+                const p1 = path[i], p2 = path[i + 1];
+                const l2 = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
+                if (l2 === 0) continue;
+                let t = ((x - p1.x) * (p2.x - p1.x) + (y - p1.y) * (p2.y - p1.y)) / l2;
+                t = Math.max(0, Math.min(1, t));
+                const d = (x - (p1.x + t * (p2.x - p1.x))) ** 2 + (y - (p1.y + t * (p2.y - p1.y))) ** 2;
+                if (Math.sqrt(d) < (trackWidth / 2 + 15)) return true;
+            }
+            return false;
+        }
+
+        function selectTower(tower) {
+            selectedTower = tower;
+            updateUpgradeUI();
+            document.getElementById('upgrade-panel').classList.remove('hidden');
+        }
+        function deselectTower() {
+            selectedTower = null;
+            document.getElementById('upgrade-panel').classList.add('hidden');
+        }
+
+        function updateUpgradeUI() {
+            if (!selectedTower) return;
+            const t = selectedTower;
+            const totalLvl = t.lvls.damage + t.lvls.speed + t.lvls.range - 2;
+            document.getElementById('sel-tower-name').innerText = `${t.config.name} L${totalLvl}`;
+            document.getElementById('up-dmg-label').innerText = t.config.effect === 'income' ? 'YLD' : 'PWR';
+            document.getElementById('up-spd-label').innerText = t.config.effect === 'income' ? '---' : (t.config.effect === 'splash' ? 'BLT' : 'SPD');
+            document.getElementById('up-rng-label').innerText = t.config.effect === 'income' ? '---' : 'RNG';
+            const paths = { damage: 'dmg', speed: 'spd', range: 'rng' };
+            Object.keys(paths).forEach(p => {
+                const k = paths[p], lvl = t.lvls[p];
+                const cost = Math.floor(t.config.cost * (lvl + 1) * 1.5);
+                if (t.config.effect === 'income' && (p === 'range' || p === 'speed')) {
+                    document.getElementById(`up-${k}-text`).innerText = '--';
+                    document.getElementById(`up-${k}-cost`).innerText = '--';
+                    document.getElementById(`up-${k}`).disabled = true;
+                } else {
+                    document.getElementById(`up-${k}-text`).innerText = `L${lvl}`;
+                    document.getElementById(`up-${k}-cost`).innerText = lvl < 5 ? `${cost}c` : 'MAX';
+                    document.getElementById(`up-${k}`).disabled = (lvl >= 5 || gold < cost);
+                }
+            });
+            document.getElementById('sell-price').innerText = `${Math.floor(t.totalValue * 0.7)}c`;
+        }
+
+        function upgradeSelected(pathKey) {
+            if (!selectedTower) return;
+            const t = selectedTower, lvl = t.lvls[pathKey];
+            if (lvl >= 5) return;
+            const cost = Math.floor(t.config.cost * (lvl + 1) * 1.5);
+            if (gold >= cost) {
+                gold -= cost; t.lvls[pathKey]++; t.totalValue += cost;
+                if (pathKey === 'damage') { if (t.config.effect === 'income') t.stats.damage += 5; else t.stats.damage *= 1.8; }
+                if (pathKey === 'speed') { if (t.config.effect === 'splash') t.stats.splashRadius *= 1.4; else t.stats.fireRate *= 0.75; }
+                if (pathKey === 'range') t.stats.range *= 1.25;
+                updateUpgradeUI(); updateUI(); createExplosion(t.x, t.y, colors.light, 20);
+            }
+        }
+
+        function sellSelected() {
+            if (!selectedTower) return;
+            gold += Math.floor(selectedTower.totalValue * 0.7);
+            towers = towers.filter(t => t !== selectedTower);
+            deselectTower(); updateUI();
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  ENEMY
+        // ════════════════════════════════════════════════════════════════════
+        class Enemy {
+            constructor(waveNum, typeKey = 'basic') {
+                const def = enemyDefinitions[typeKey];
+                this.typeKey = typeKey; this.x = path[0].x; this.y = path[0].y;
+                this.pathIndex = 0; this.baseSpeed = def.speed; this.speed = def.speed;
+                this.maxHealth = def.hp; this.health = def.hp;
+                this.radius = typeKey === 'boss' ? 24 : (typeKey === 'heavy' || typeKey === 'tank' ? 18 : 11);
+                this.slowTimer = 0; this.hitFlashTimer = 0; this.dead = false;
+                this.baseColor = def.color; this.shape = def.shape; this.effect = def.effect;
+            }
+            takeDamage(amount) {
+                let d = amount; if (this.effect === 'shield') d *= 0.5;
+                const fd = Math.min(d, this.health); this.health -= fd;
+                if (this.health <= 0) enemiesDefeatedTotal++;
+                gold += 1; updateUI(); this.hitFlashTimer = 8;
+            }
+            update() {
+                this.speed = this.slowTimer > 0 ? this.baseSpeed * 0.5 : this.baseSpeed;
+                if (this.slowTimer > 0) this.slowTimer--;
+                if (this.hitFlashTimer > 0) this.hitFlashTimer--;
+                const target = path[this.pathIndex + 1]; if (!target) return;
+                const dx = target.x - this.x, dy = target.y - this.y, dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < this.speed) {
+                    this.pathIndex++;
+                    if (this.pathIndex >= path.length - 1) {
+                        health -= (this.typeKey === 'boss' ? 15 : (this.typeKey === 'heavy' ? 5 : 1));
+                        updateUI(); this.dead = true;
+                    }
+                } else { this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed; }
+            }
+            draw() {
+                ctx.save(); ctx.translate(this.x, this.y);
+                const hp = Math.max(0, this.health / this.maxHealth);
+                let alpha = 0.1 + hp * 0.8;
+                if (hp < 0.3) alpha *= (0.6 + Math.sin(frameCount * 0.5) * 0.4);
+                if (this.hitFlashTimer > 0) { ctx.strokeStyle = colors.danger; ctx.fillStyle = colors.danger; ctx.lineWidth = 4; ctx.globalAlpha = 1; }
+                else { ctx.globalAlpha = alpha; if (this.effect === 'ghost') ctx.globalAlpha *= 0.6; ctx.strokeStyle = this.slowTimer > 0 ? '#4cc9f0' : this.baseColor; ctx.lineWidth = 3; }
+                drawShape(ctx, 0, 0, this.radius, this.shape, true);
+                if (this.effect === 'shield' && this.hitFlashTimer <= 0) {
+                    ctx.save(); ctx.strokeStyle = '#4CC9F0'; ctx.lineWidth = 1; ctx.globalAlpha = 0.6 * hp;
+                    ctx.beginPath(); ctx.arc(0, 0, this.radius + 5, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+                }
+                if (this.hitFlashTimer > 0) { ctx.globalAlpha = 0.9; ctx.fillStyle = colors.danger; }
+                else { ctx.globalAlpha *= 0.4; ctx.fillStyle = ctx.strokeStyle; }
+                drawShape(ctx, 0, 0, this.radius * 0.5, this.shape, false); ctx.restore();
+                if (hp < 1) {
+                    ctx.save(); ctx.globalAlpha = Math.max(0.3, hp);
+                    ctx.fillStyle = colors.muted; ctx.fillRect(this.x - 12, this.y - 20, 24, 3);
+                    ctx.fillStyle = this.hitFlashTimer > 0 ? colors.danger : (this.effect === 'shield' ? '#4CC9F0' : colors.accent);
+                    ctx.fillRect(this.x - 12, this.y - 20, 24 * hp, 3); ctx.restore();
+                }
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  TOWER  ← cosmetics integrated here
+        // ════════════════════════════════════════════════════════════════════
+        class Tower {
+            constructor(x, y, type) {
+                this.x = x; this.y = y; this.type = type;
+                this.config = towerTypes[type];
+                this.stats = { ...this.config };
+                this.lvls = { damage: 1, speed: 1, range: 1 };
+                this.totalValue = this.config.cost;
+                this.cooldown = 0;
+                this.rotation = Math.random() * Math.PI * 2;
+            }
+            update() {
+                this.rotation += this.config.effect === 'void' ? 0.08 : 0.02;
+                if (this.stats.effect === 'income') return;
+                if (this.cooldown > 0) { this.cooldown--; return; }
+                const target = enemies.find(e => !e.dead && Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2) <= this.stats.range);
+                if (target) { projectiles.push(new Projectile(this.x, this.y, target, this.stats)); this.cooldown = this.stats.fireRate; }
+            }
+            draw() {
+                const isSel = selectedTower === this;
+                const totalLvl = this.lvls.damage + this.lvls.speed + this.lvls.range - 2;
+
+                // Range ring when selected
+                if (isSel && this.stats.range > 0) {
+                    ctx.save();
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.stats.range, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(242,233,228,0.2)'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]); ctx.stroke();
+                    ctx.restore();
+                }
+
+                ctx.save(); ctx.translate(this.x, this.y);
+                const size = (15 * (1 + totalLvl * 0.1));
+
+                // Void hex aura
+                if (this.config.effect === 'void') {
+                    ctx.save(); ctx.rotate(-this.rotation * 0.5);
+                    ctx.strokeStyle = '#9d4edd'; ctx.lineWidth = 2; ctx.globalAlpha = 0.4;
+                    drawShape(ctx, 0, 0, size * 1.5, 'hexagon', true); ctx.restore();
+                }
+
+                // Orbit ring at lvl 3+
+                if (totalLvl >= 3) {
+                    ctx.save(); ctx.strokeStyle = colors.accent; ctx.lineWidth = 1; ctx.globalAlpha = 0.3;
+                    ctx.rotate(this.rotation);
+                    ctx.beginPath(); ctx.ellipse(0, 0, size + 10, (size + 10) * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
+                    if (totalLvl >= 6) { ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.ellipse(0, 0, size + 15, (size + 15) * 0.4, 0, 0, Math.PI * 2); ctx.stroke(); }
+                    ctx.restore();
+                }
+
+                // Selection highlight
+                if (isSel) {
+                    ctx.shadowBlur = 10; ctx.shadowColor = colors.light;
+                    ctx.fillStyle = colors.light; drawShape(ctx, 0, 0, size + 4, this.config.shape);
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = colors.dark; drawShape(ctx, 0, 0, size + 2, this.config.shape);
+                }
+
+                // Main body
+                ctx.fillStyle = this.config.effect === 'void' ? '#3c096c' : colors.accent;
+                drawShape(ctx, 0, 0, size, this.config.shape);
+
+                // Core pulse
+                const cp = (Math.sin(frameCount * 0.1) * 0.2) + 0.8;
+                ctx.fillStyle = this.config.effect === 'void' ? '#e0aaff' : colors.light;
+                ctx.globalAlpha = 0.4 * cp;
+                drawShape(ctx, 0, 0, size * 0.5, this.config.shape);
+                ctx.globalAlpha = 1;
+
+                // ── COSMETIC SKIN ── rendered on top of the tower body
+                const skinIcon = getEquippedIconForType(this.type);
+                if (skinIcon) {
+                    // Scale emoji relative to tower size; add gentle per-tower wobble offset
+                    const emojiSize = size * 1.6;
+                    ctx.save();
+                    ctx.font = `${emojiSize}px serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    // Slow per-tower wobble using rotation offset as phase
+                    const wobble = Math.sin(frameCount * 0.04 + this.rotation) * 3;
+                    ctx.rotate(wobble * Math.PI / 180);
+                    ctx.fillText(skinIcon, 0, 0);
+                    ctx.restore();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  PROJECTILE
+        // ════════════════════════════════════════════════════════════════════
+        class Projectile {
+            constructor(x, y, target, stats) {
+                this.x = x; this.y = y; this.target = target;
+                this.speed = stats.effect === 'void' ? 20 : 12;
+                this.damage = stats.damage; this.effect = stats.effect;
+                this.splashRadius = stats.splashRadius || 0; this.dead = false;
+            }
+            update() {
+                const dx = this.target.x - this.x, dy = this.target.y - this.y, dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < this.speed) {
+                    this.dead = true;
+                    if (this.effect === 'splash') {
+                        enemies.forEach(e => { if (!e.dead && Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2) < this.splashRadius) e.takeDamage(this.damage); });
+                        particles.push({ x: this.x, y: this.y, life: 15, color: colors.light, isRing: true, maxRadius: this.splashRadius });
+                    } else {
+                        this.target.takeDamage(this.damage);
+                        if (this.effect === 'freeze') this.target.slowTimer = 80;
+                    }
+                    createExplosion(this.x, this.y, this.effect === 'void' ? '#e0aaff' : colors.light);
+                } else { this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed; }
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = this.effect === 'void' ? '#e0aaff' : colors.light;
+                ctx.shadowBlur = this.effect === 'void' ? 8 : 0; ctx.shadowColor = '#e0aaff';
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.effect === 'void' ? 3 : 4, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function createExplosion(x, y, color, count = 8) {
+            for (let i = 0; i < count; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, life: 20, color });
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  UI
+        // ════════════════════════════════════════════════════════════════════
+        function updateUI() {
+            document.getElementById('gold-display').innerText = `CREDITS: ${Math.floor(gold)}`;
+            document.getElementById('health-display').innerText = `INTEGRITY: ${health}`;
+            document.getElementById('wave-display').innerText = `WAVE: ${wave}`;
+            Object.keys(towerTypes).forEach(key => {
+                const btn = document.getElementById(`btn-${key}`);
+                if (btn) btn.disabled = gold < towerTypes[key].cost;
+            });
+            const intel = document.getElementById('enemy-preview');
+            const nw = wave + 1;
+            let txt = `Upcoming: Wave ${nw}<br>`;
+            if (nw % 10 === 0) txt += "<span class='text-red-400 font-bold'>CENTRAL OVERRIDE</span>";
+            else if (nw % 5 === 0) txt += "<span class='text-blue-400 font-bold'>AEGIS UNITS</span>";
+            else txt += "STANDARD SWARM";
+            intel.innerHTML = txt;
+            if (health <= 0) document.getElementById('game-over').classList.remove('hidden');
+            updateUpgradeUI();
+        }
+
+        function startWave() {
+            if (isWaveActive) return;
+            wave++; isWaveActive = true;
+            towers.forEach(t => { if (t.stats.effect === 'income') gold += Math.floor(t.stats.damage); });
+            updateUI();
+            const list = [];
+            const intensity = 8 + Math.floor(wave * 1.5);
+            for (let i = 0; i < intensity; i++) {
+                if (wave >= 10 && i % 10 === 0) list.push('boss');
+                else if (wave >= 5 && i % 5 === 0) list.push('shield');
+                else if (wave >= 3 && i % 4 === 0) list.push('tank');
+                else list.push('basic');
+            }
+            let spawned = 0;
+            const iv = setInterval(() => { if (spawned < list.length) { enemies.push(new Enemy(wave, list[spawned])); spawned++; } else clearInterval(iv); }, 500);
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  QUIZ
+        // ════════════════════════════════════════════════════════════════════
+        function closeQuiz() { document.getElementById('quiz-overlay').classList.remove('active'); }
+
+        async function fetchKnownWords() {
+            const { data: { user } } = await supabaseClient.auth.getUser(); if (!user) return [];
+            const { data } = await supabaseClient.from('profiles').select('known_words').eq('id', user.id).single();
+            return (data?.known_words || []).slice(-10);
+        }
+
+        async function generateQuizFromCerebras(words) {
+            const r = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CEREBRAS_API_KEY}` },
+                body: JSON.stringify({
+                    model: 'llama3.1-8b',
+                    messages: [{ role: 'user', content: `You are a vocabulary quiz generator. Given this list of English words the student has recently learned: [${words.join(', ')}]\n\nPick ONE word from the list and create a multiple-choice question that tests whether the student understands its meaning, usage, or a synonym/antonym.\n\nRules:\n- The question must be clearly about the chosen word without giving away the answer\n- Provide exactly 4 options (A–D), only one of which is correct\n- Make the wrong options plausible but clearly incorrect to someone who knows the word\n- Keep questions concise and appropriate for an intermediate English learner\n\nRespond ONLY with a valid JSON object in this exact format, no markdown, no extra text:\n{\n  "word": "the word being tested",\n  "question": "the question text",\n  "options": ["option A", "option B", "option C", "option D"],\n  "correctIndex": 0,\n  "reward": 250\n}` }],
+                    temperature: 0.7, response_format: { type: 'json_object' }
+                })
+            });
+            if (!r.ok) throw new Error(`Cerebras ${r.status}`);
+            return JSON.parse((await r.json()).choices[0].message.content);
+        }
+
+        async function triggerGeminiQuiz() {
+            document.getElementById('quiz-overlay').classList.add('active');
+            document.getElementById('quiz-loading').classList.remove('hidden');
+            document.getElementById('quiz-actual').classList.add('hidden');
+            try {
+                await restoreSession();
+                const words = await fetchKnownWords();
+                if (!words.length) { gold += 100; updateUI(); closeQuiz(); return; }
+                const quiz = await generateQuizFromCerebras(words);
+                document.getElementById('question-text').innerText = quiz.question;
+                const oc = document.getElementById('options-container'); oc.innerHTML = '';
+                quiz.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = "py-3 px-4 border text-left text-xs font-bold transition-all uppercase answer";
+                    btn.style.borderColor = colors.accent; btn.style.color = colors.light; btn.innerText = opt;
+                    btn.onclick = () => {
+                        oc.querySelectorAll('button').forEach(b => b.disabled = true);
+                        if (idx === quiz.correctIndex) {
+                            btn.style.background = '#4CAF50'; btn.style.color = '#fff'; btn.style.borderColor = '#4CAF50';
+                            gold += quiz.reward; updateUI(); setTimeout(closeQuiz, 900);
+                        } else {
+                            btn.style.background = '#C1121F'; btn.style.color = '#fff'; btn.style.borderColor = '#C1121F';
+                            oc.querySelectorAll('button')[quiz.correctIndex].style.background = '#4CAF50';
+                            oc.querySelectorAll('button')[quiz.correctIndex].style.color = '#fff';
+                            oc.querySelectorAll('button')[quiz.correctIndex].style.borderColor = '#4CAF50';
+                            setTimeout(closeQuiz, 1400);
+                        }
+                    };
+                    oc.appendChild(btn);
+                });
+                document.getElementById('quiz-loading').classList.add('hidden');
+                document.getElementById('quiz-actual').classList.remove('hidden');
+            } catch (e) { console.error(e); gold += 100; updateUI(); closeQuiz(); }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  SUPABASE — progress + cosmetics
+        // ════════════════════════════════════════════════════════════════════
+        async function restoreSession() {
+            try {
+                const r = await fetch('/api/session'); if (!r.ok) return;
+                const { access_token, refresh_token } = await r.json();
+                await supabaseClient.auth.setSession({ access_token, refresh_token });
+            } catch (e) { console.warn('session restore:', e); }
+        }
+
+        function serialiseTowers() {
+            return towers.map(t => ({ x: t.x, y: t.y, type: t.type, lvls: { ...t.lvls }, totalValue: t.totalValue }));
+        }
+
+        function deserialiseTowers(snap) {
+            towers = [];
+            snap.forEach(s => {
+                const t = new Tower(s.x, s.y, s.type);
+                t.lvls = { ...s.lvls }; t.totalValue = s.totalValue;
+                const { lvls, config } = t;
+                for (let i = 1; i < lvls.damage; i++) config.effect === 'income' ? t.stats.damage += 5 : t.stats.damage *= 1.8;
+                for (let i = 1; i < lvls.speed; i++)  config.effect === 'splash' ? t.stats.splashRadius *= 1.4 : t.stats.fireRate *= 0.75;
+                for (let i = 1; i < lvls.range; i++)  t.stats.range *= 1.25;
+                towers.push(t);
+            });
+        }
+
+        async function saveProgress() {
+            const { data: { user } } = await supabaseClient.auth.getUser(); if (!user) return;
+            const { error } = await supabaseClient.from('tower_progress').upsert(
+                { user_id: user.id, wave, gold: Math.floor(gold), castle_hp: health, towers_built: towers.length, enemies_defeated: enemiesDefeatedTotal, towers_snapshot: serialiseTowers() },
+                { onConflict: 'user_id' }
+            );
+            if (error) console.error('saveProgress:', error.message);
+        }
+
+        async function loadProgress() {
+            const { data: { user } } = await supabaseClient.auth.getUser(); if (!user) return;
+            const { data, error } = await supabaseClient.from('tower_progress')
+                .select('wave,gold,castle_hp,towers_built,enemies_defeated,towers_snapshot')
+                .eq('user_id', user.id).single();
+            if (error || !data) { console.log('No saved progress.'); return; }
+            wave = data.wave ?? 0; gold = data.gold ?? 150; health = data.castle_hp ?? 20;
+            enemiesDefeatedTotal = data.enemies_defeated ?? 0;
+            if (data.towers_snapshot?.length) deserialiseTowers(data.towers_snapshot);
+            updateUI();
+        }
+
+        // ── Load equipped skins from profiles ──────────────────────────────
+        async function loadCosmeticSkins() {
+            const { data: { user } } = await supabaseClient.auth.getUser(); if (!user) return;
+            const { data, error } = await supabaseClient.from('profiles')
+                .select('equipped_skins').eq('id', user.id).single();
+            if (error) { console.warn('loadCosmeticSkins:', error.message); return; }
+            equippedSkins = data?.equipped_skins ?? {};
+            // Rebuild the shop buttons so skin-dot appears
+            initShop();
+            updateUI();
+            console.log('Cosmetic skins loaded:', equippedSkins);
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  INPUT
+        // ════════════════════════════════════════════════════════════════════
+        window.addEventListener('mousemove', e => {
+            const r = canvas.getBoundingClientRect();
+            mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (draggingTowerType) {
+                const cfg = towerTypes[draggingTowerType];
+                if (mouseX >= 0 && mouseX <= canvas.width && mouseY >= 0 && mouseY <= canvas.height) {
+                    const blocked = isOnPath(mouseX, mouseY) || towers.some(t => Math.sqrt((t.x - mouseX) ** 2 + (t.y - mouseY) ** 2) < 40);
+                    if (!blocked && gold >= cfg.cost) {
+                        const nt = new Tower(mouseX, mouseY, draggingTowerType);
+                        towers.push(nt); gold -= cfg.cost; updateUI(); selectTower(nt);
+                    }
+                }
+            }
+            draggingTowerType = null;
+        });
+
+        canvas.addEventListener('mousedown', () => {
+            const t = towers.find(t => Math.sqrt((t.x - mouseX) ** 2 + (t.y - mouseY) ** 2) < 30);
+            if (t) selectTower(t); else deselectTower();
+        });
+
+        // ════════════════════════════════════════════════════════════════════
+        //  GAME LOOP
+        // ════════════════════════════════════════════════════════════════════
+        function gameLoop() {
+            frameCount++;
+            ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+            ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw path
+            ctx.save();
+            ctx.strokeStyle = colors.muted; ctx.lineWidth = trackWidth; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y); path.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+            ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = trackWidth - 10;
+            ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y); path.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+            ctx.restore();
+
+            towers.forEach(t => { t.update(); t.draw(); });
+
+            // Drag preview
+            if (draggingTowerType) {
+                const cfg = towerTypes[draggingTowerType];
+                const blocked = isOnPath(mouseX, mouseY) || towers.some(t => Math.sqrt((t.x - mouseX) ** 2 + (t.y - mouseY) ** 2) < 40);
+                ctx.save();
+                ctx.beginPath(); ctx.arc(mouseX, mouseY, cfg.range, 0, Math.PI * 2);
+                ctx.strokeStyle = blocked ? 'rgba(255,85,85,0.3)' : 'rgba(242,233,228,0.2)';
+                ctx.setLineDash([5, 5]); ctx.stroke(); ctx.restore();
+                ctx.save(); ctx.globalAlpha = 0.5;
+                ctx.fillStyle = blocked ? '#ff5555' : colors.light;
+                drawShape(ctx, mouseX, mouseY, 15, cfg.shape); ctx.restore();
+            }
+
+            enemies = enemies.filter(e => { if (e.dead || e.health <= 0) return false; e.update(); e.draw(); return true; });
+            projectiles = projectiles.filter(p => { if (p.dead || p.target.dead) return false; p.update(); p.draw(); return true; });
+
+            particles = particles.filter(p => {
+                ctx.save();
+                if (p.isRing) {
+                    ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.globalAlpha = Math.max(0, p.life / 15);
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.maxRadius * (1 - p.life / 15), 0, Math.PI * 2); ctx.stroke();
+                } else {
+                    p.x += p.vx; p.y += p.vy;
+                    ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life / 20);
+                    ctx.fillRect(p.x, p.y, 3, 3);
+                }
+                ctx.restore(); p.life--; return p.life > 0;
+            });
+
+            if (isWaveActive && enemies.length === 0) { isWaveActive = false; saveProgress(); }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  BOOT
+        // ════════════════════════════════════════════════════════════════════
+        window.onload = async () => {
+            initShop();
+            updateUI();
+            gameLoop();
+            await restoreSession();
+            // Load progress and cosmetics in parallel
+            await Promise.all([loadProgress(), loadCosmeticSkins()]);
+        };
+    </script>
+</body>
+
+</html>

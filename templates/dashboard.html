@@ -1,9 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>loom</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>loom - dashboard</title>
+  <link rel="icon" href="{{ url_for('static', filename='.module/favicon.ico') }}" type="image/x-icon">
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Cursor -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='.module/cursor/style.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js"></script>
+
   <style>
     :root {
       --dark: #22223B;
@@ -15,7 +25,13 @@
       --font: "Roboto Mono", "Vazirmatn", monospace;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      cursor: none;
+      user-select: none;
+    }
 
     body {
       font-family: var(--font);
@@ -39,11 +55,16 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(34,34,59,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(34,34,59,0.04) 1px, transparent 1px);
+        linear-gradient(rgba(34, 34, 59, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 34, 59, 0.04) 1px, transparent 1px);
       background-size: 48px 48px;
       pointer-events: none;
       z-index: 0;
+    }
+
+    a {
+      text-decoration: none;
+      color: var(--dark);
     }
 
     nav {
@@ -53,8 +74,8 @@
       align-items: center;
       justify-content: space-between;
       padding: 18px 40px;
-      border-bottom: 1px solid rgba(34,34,59,0.1);
-      background: rgba(242,233,228,0.8);
+      border-bottom: 1px solid rgba(34, 34, 59, 0.1);
+      background: rgba(242, 233, 228, 0.8);
       backdrop-filter: blur(12px);
     }
 
@@ -70,15 +91,25 @@
     }
 
     .nav-logo-dot {
-      width: 8px; height: 8px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--dark);
       animation: pulse 2s ease-in-out infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.4; transform: scale(0.7); }
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.7);
+      }
     }
 
     .nav-right {
@@ -107,7 +138,9 @@
       padding: 40px 40px 80px;
     }
 
-    .greeting { margin-bottom: 36px; }
+    .greeting {
+      margin-bottom: 36px;
+    }
 
     .greeting-sub {
       font-size: 0.72rem;
@@ -132,15 +165,21 @@
     .greeting-main span::after {
       content: '';
       position: absolute;
-      bottom: 2px; left: 0; right: 0;
+      bottom: 2px;
+      left: 0;
+      right: 0;
       height: 3px;
       background: var(--dark);
       transform: scaleX(0);
       transform-origin: left;
-      animation: underline-in 0.6s 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+      animation: underline-in 0.6s 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    @keyframes underline-in { to { transform: scaleX(1); } }
+    @keyframes underline-in {
+      to {
+        transform: scaleX(1);
+      }
+    }
 
     .grid {
       display: grid;
@@ -150,8 +189,8 @@
 
     /* ── CARD BASE ── */
     .card {
-      background: rgba(242,233,228,0.92);
-      border: 1px solid rgba(34,34,59,0.1);
+      background: rgba(242, 233, 228, 0.92);
+      border: 1px solid rgba(34, 34, 59, 0.1);
       box-shadow: var(--card-shadow);
       padding: 28px;
       transform-style: preserve-3d;
@@ -164,7 +203,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 60%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 60%);
       pointer-events: none;
     }
 
@@ -182,12 +221,15 @@
 
     .card-label::before {
       content: '';
-      width: 16px; height: 1px;
+      width: 16px;
+      height: 1px;
       background: var(--accent2);
     }
 
     /* ── STREAK CARD ── */
-    .card-streak { grid-column: span 3; }
+    .card-streak {
+      grid-column: span 3;
+    }
 
     .streak-number {
       font-size: 4.5rem;
@@ -218,8 +260,9 @@
     }
 
     .streak-dot {
-      width: 20px; height: 20px;
-      border: 1.5px solid rgba(34,34,59,0.2);
+      width: 20px;
+      height: 20px;
+      border: 1.5px solid rgba(34, 34, 59, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -257,32 +300,41 @@
 
     .xp-bar {
       height: 4px;
-      background: rgba(34,34,59,0.1);
+      background: rgba(34, 34, 59, 0.1);
       position: relative;
       overflow: hidden;
     }
 
     .xp-fill {
       position: absolute;
-      left: 0; top: 0; bottom: 0;
+      left: 0;
+      top: 0;
+      bottom: 0;
       background: var(--dark);
       transform-origin: left;
-      animation: grow-bar 1s 0.6s cubic-bezier(0.16,1,0.3,1) both;
+      animation: grow-bar 1s 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
     @keyframes grow-bar {
-      from { transform: scaleX(0); }
-      to   { transform: scaleX(1); }
+      from {
+        transform: scaleX(0);
+      }
+
+      to {
+        transform: scaleX(1);
+      }
     }
 
     /* ── TOWER DEFENSE CARD ── */
-    .card-tower { grid-column: span 5; }
+    .card-tower {
+      grid-column: span 5;
+    }
 
     .tower-preview {
       position: relative;
       height: 140px;
-      background: rgba(34,34,59,0.04);
-      border: 1px solid rgba(34,34,59,0.08);
+      background: rgba(34, 34, 59, 0.04);
+      border: 1px solid rgba(34, 34, 59, 0.08);
       margin-bottom: 18px;
       overflow: hidden;
       display: flex;
@@ -291,7 +343,9 @@
 
     .tower-path {
       position: absolute;
-      bottom: 20px; left: 0; right: 0;
+      bottom: 20px;
+      left: 0;
+      right: 0;
       height: 2px;
       background: repeating-linear-gradient(90deg, var(--accent2) 0, var(--accent2) 6px, transparent 6px, transparent 12px);
       opacity: 0.4;
@@ -305,695 +359,1092 @@
       align-items: center;
     }
 
-    .tower-body { width: 16px; background: var(--dark); border-radius: 2px 2px 0 0; }
+    .tower-body {
+      width: 16px;
+      background: var(--dark);
+      border-radius: 2px 2px 0 0;
+    }
 
     .tower-top {
-      width: 22px; height: 6px;
+      width: 22px;
+      height: 6px;
       background: var(--dark);
-      display: flex; gap: 3px;
+      display: flex;
+      gap: 3px;
       align-items: flex-start;
       padding: 0 1px;
     }
 
-    .tower-top span { flex: 1; height: 3px; background: var(--light); margin-top: 1px; }
+    .tower-top span {
+      flex: 1;
+      height: 3px;
+      background: var(--light);
+      margin-top: 1px;
+    }
 
     .enemy {
-      position: absolute; bottom: 26px;
+      position: absolute;
+      bottom: 26px;
       font-size: 1rem;
       animation: march 4s linear infinite;
     }
 
-    @keyframes march { from { left: 100%; } to { left: -10%; } }
+    @keyframes march {
+      from {
+        left: 100%;
+      }
+
+      to {
+        left: -10%;
+      }
+    }
 
     .wave-badge {
-      position: absolute; top: 10px; right: 10px;
-      font-size: 0.6rem; font-weight: 600;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.6rem;
+      font-weight: 600;
       letter-spacing: 0.12em;
-      color: var(--light); background: var(--dark);
+      color: var(--light);
+      background: var(--dark);
       padding: 3px 8px;
     }
 
-    .hp-bar-wrap { position: absolute; top: 10px; left: 10px; width: 80px; }
-    .hp-label { font-size: 0.55rem; color: var(--accent2); letter-spacing: 0.1em; margin-bottom: 3px; }
-    .hp-bar { height: 3px; background: rgba(34,34,59,0.1); }
-    .hp-fill { height: 100%; background: var(--dark); }
+    .hp-bar-wrap {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 80px;
+    }
+
+    .hp-label {
+      font-size: 0.55rem;
+      color: var(--accent2);
+      letter-spacing: 0.1em;
+      margin-bottom: 3px;
+    }
+
+    .hp-bar {
+      height: 3px;
+      background: rgba(34, 34, 59, 0.1);
+    }
+
+    .hp-fill {
+      height: 100%;
+      background: var(--dark);
+    }
 
     .tower-stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px; margin-bottom: 18px;
+      gap: 10px;
+      margin-bottom: 18px;
     }
 
-    .stat-item { text-align: center; }
-    .stat-val { font-size: 1.3rem; font-weight: 700; color: var(--dark); display: block; }
-    .stat-key { font-size: 0.58rem; letter-spacing: 0.1em; color: var(--accent2); text-transform: uppercase; }
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--dark);
+      display: block;
+    }
+
+    .stat-key {
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      color: var(--accent2);
+      text-transform: uppercase;
+    }
 
     .btn-play {
-      width: 100%; padding: 12px;
-      background: var(--dark); color: var(--light);
-      border: none; font-family: var(--font);
-      font-size: 0.72rem; font-weight: 600;
-      letter-spacing: 0.2em; text-transform: uppercase;
-      cursor: pointer;
+      width: 100%;
+      padding: 12px;
+      background: var(--dark);
+      color: var(--light);
+      border: none;
+      font-family: var(--font);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
       transition: background 0.2s, transform 0.1s;
-      display: flex; align-items: center; justify-content: center; gap: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
 
-    .btn-play:hover { background: var(--accent1); }
-    .btn-play:active { transform: scale(0.98); }
+    .btn-play:hover {
+      background: var(--accent1);
+    }
+
+    .btn-play:active {
+      transform: scale(0.98);
+    }
 
     .btn-play-icon {
-      width: 0; height: 0;
+      width: 0;
+      height: 0;
       border-top: 5px solid transparent;
       border-bottom: 5px solid transparent;
       border-left: 8px solid var(--light);
     }
 
     /* ── TODAY'S WORDS CARD ── */
-    .card-words { grid-column: span 4; }
+    .card-words {
+      grid-column: span 4;
+    }
 
-    .word-list { display: flex; flex-direction: column; gap: 10px; }
+    .word-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
     .word-item {
       display: grid;
       grid-template-columns: 1fr auto;
       align-items: center;
-      gap: 12px; padding: 12px 14px;
-      background: rgba(34,34,59,0.03);
-      border: 1px solid rgba(34,34,59,0.07);
-      transition: background 0.15s; cursor: pointer;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(34, 34, 59, 0.03);
+      border: 1px solid rgba(34, 34, 59, 0.07);
+      transition: background 0.15s;
     }
 
-    .word-item:hover { background: rgba(34,34,59,0.07); }
-    .word-main { font-size: 0.88rem; font-weight: 600; color: var(--dark); letter-spacing: 0.02em; }
-    .word-def { font-size: 0.62rem; color: var(--accent2); margin-top: 2px; font-style: italic; }
+    .word-item:hover {
+      background: rgba(34, 34, 59, 0.07);
+    }
+
+    .word-main {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--dark);
+      letter-spacing: 0.02em;
+    }
+
+    .word-def {
+      font-size: 0.62rem;
+      color: var(--accent2);
+      margin-top: 2px;
+      font-style: italic;
+    }
 
     .word-tag {
-      font-size: 0.55rem; font-weight: 600;
-      letter-spacing: 0.12em; text-transform: uppercase;
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
       padding: 3px 7px;
-      border: 1px solid rgba(34,34,59,0.2);
-      color: var(--accent1); white-space: nowrap;
+      border: 1px solid rgba(34, 34, 59, 0.2);
+      color: var(--accent1);
+      white-space: nowrap;
     }
 
     /* ── CHART CARD ── */
-    .card-chart { grid-column: span 7; }
+    .card-chart {
+      grid-column: span 7;
+    }
 
-    .chart-meta { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
-    .chart-total { font-size: 2rem; font-weight: 700; color: var(--dark); line-height: 1; }
-    .chart-total-label { font-size: 0.62rem; letter-spacing: 0.1em; color: var(--accent2); }
-    .chart-wrap { width: 100%; position: relative; }
-    .chart-wrap svg { width: 100%; height: 160px; overflow: visible; }
-    .chart-x-labels { display: flex; justify-content: space-between; margin-top: 6px; }
-    .chart-x-label { font-size: 0.56rem; letter-spacing: 0.08em; color: var(--accent2); text-transform: uppercase; }
+    .chart-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .chart-total {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--dark);
+      line-height: 1;
+    }
+
+    .chart-total-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      color: var(--accent2);
+    }
+
+    .chart-wrap {
+      width: 100%;
+      position: relative;
+    }
+
+    .chart-wrap svg {
+      width: 100%;
+      height: 160px;
+      overflow: visible;
+    }
+
+    .chart-x-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+
+    .chart-x-label {
+      font-size: 0.56rem;
+      letter-spacing: 0.08em;
+      color: var(--accent2);
+      text-transform: uppercase;
+    }
 
     /* ── MISTAKES CARD ── */
-    .card-mistakes { grid-column: span 5; }
+    .card-mistakes {
+      grid-column: span 5;
+    }
 
-    .mistake-list { display: flex; flex-direction: column; gap: 8px; }
+    .mistake-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
     .mistake-item {
-      display: flex; align-items: flex-start; gap: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
       padding: 11px 13px;
-      background: rgba(34,34,59,0.03);
+      background: rgba(34, 34, 59, 0.03);
       border-left: 2px solid transparent;
       transition: border-color 0.2s;
     }
 
-    .mistake-item:hover { border-left-color: var(--dark); }
-    .mistake-q { font-size: 0.72rem; color: var(--dark); line-height: 1.4; margin-bottom: 5px; }
-    .mistake-a { font-size: 0.62rem; color: var(--accent2); font-style: italic; }
-    .mistake-a strong { font-style: normal; color: var(--accent1); }
+    .mistake-item:hover {
+      border-left-color: var(--dark);
+    }
+
+    .mistake-q {
+      font-size: 0.72rem;
+      color: var(--dark);
+      line-height: 1.4;
+      margin-bottom: 5px;
+    }
+
+    .mistake-a {
+      font-size: 0.62rem;
+      color: var(--accent2);
+      font-style: italic;
+    }
+
+    .mistake-a strong {
+      font-style: normal;
+      color: var(--accent1);
+    }
 
     /* ── QUICK STATS BAR ── */
     .card-statsbar {
       grid-column: span 12;
-      display: flex; gap: 0; padding: 0; overflow: hidden;
+      display: flex;
+      gap: 0;
+      padding: 0;
+      overflow: hidden;
     }
 
     .stat-bar-item {
-      flex: 1; padding: 18px 20px;
-      border-right: 1px solid rgba(34,34,59,0.1);
-      display: flex; align-items: center; gap: 14px;
+      flex: 1;
+      padding: 18px 20px;
+      border-right: 1px solid rgba(34, 34, 59, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
 
-    .stat-bar-item:last-child { border-right: none; }
-    .stat-bar-icon { font-size: 1.3rem; opacity: 0.7; }
-    .stat-bar-val { font-size: 1.2rem; font-weight: 700; color: var(--dark); line-height: 1; }
-    .stat-bar-key { font-size: 0.58rem; letter-spacing: 0.12em; color: var(--accent2); text-transform: uppercase; margin-top: 3px; }
+    .stat-bar-item:last-child {
+      border-right: none;
+    }
+
+    .stat-bar-icon {
+      font-size: 1.3rem;
+      opacity: 0.7;
+    }
+
+    .stat-bar-val {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--dark);
+      line-height: 1;
+    }
+
+    .stat-bar-key {
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      color: var(--accent2);
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
 
     /* ── CARD REVEAL ANIMATION ── */
     @keyframes card-in {
-      from { opacity: 0; translate: 0 20px; }
-      to   { opacity: 1; translate: 0 0px;  }
+      from {
+        opacity: 0;
+        translate: 0 20px;
+      }
+
+      to {
+        opacity: 1;
+        translate: 0 0px;
+      }
     }
 
-    .card { animation: card-in 0.5s cubic-bezier(0.16,1,0.3,1) both; }
-    .card:nth-child(1) { animation-delay: 0.05s; }
-    .card:nth-child(2) { animation-delay: 0.12s; }
-    .card:nth-child(3) { animation-delay: 0.18s; }
-    .card:nth-child(4) { animation-delay: 0.08s; }
-    .card:nth-child(5) { animation-delay: 0.14s; }
-    .card:nth-child(6) { animation-delay: 0.22s; }
+    .card {
+      animation: card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
 
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--accent3); }
+    .card:nth-child(1) {
+      animation-delay: 0.05s;
+    }
+
+    .card:nth-child(2) {
+      animation-delay: 0.12s;
+    }
+
+    .card:nth-child(3) {
+      animation-delay: 0.18s;
+    }
+
+    .card:nth-child(4) {
+      animation-delay: 0.08s;
+    }
+
+    .card:nth-child(5) {
+      animation-delay: 0.14s;
+    }
+
+    .card:nth-child(6) {
+      animation-delay: 0.22s;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--accent3);
+    }
 
     @media (max-width: 900px) {
-      .card-streak, .card-tower, .card-words,
-      .card-chart, .card-mistakes { grid-column: span 12; }
-      main { padding: 24px 20px 60px; }
+
+      .card-streak,
+      .card-tower,
+      .card-words,
+      .card-chart,
+      .card-mistakes {
+        grid-column: span 12;
+      }
+
+      main {
+        padding: 24px 20px 60px;
+      }
     }
   </style>
 </head>
+
 <body>
 
-<nav>
-  <div class="nav-logo">
-    <div class="nav-logo-dot"></div>
-    LexiCore
-  </div>
-  <div class="nav-right">
-    <span id="navDate"></span>
-    <span class="nav-level" id="navLevel">—</span>
-    <span id="navName">—</span>
-  </div>
-</nav>
+  <div class="cursor">
+    <div class="cursor__ball cursor__ball--big ">
+      <svg height="30" width="30">
+        <circle cx="15" cy="15" r="12" stroke-width="0"></circle>
+      </svg>
+    </div>
 
-<main>
-  <div class="greeting">
-    <div class="greeting-sub" id="sessionLabel">// session_—</div>
-    <div class="greeting-main" id="greetingMain">—</div>
+    <div class="cursor__ball cursor__ball--small">
+      <svg height="10" width="10">
+        <circle cx="5" cy="5" r="4" stroke-width="0"></circle>
+      </svg>
+    </div>
   </div>
 
-  <div class="grid">
+  <nav>
+    <div class="nav-logo">
+      <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="5em" height="auto" viewBox="0 0 1824 576"
+        preserveAspectRatio="xMidYMid meet">
+        <g fill="#000000">
+          <path
+            d="M774.2 574 c-39.5 -6.2 -76.1 -20.6 -112.7 -44.5 -15.8 -10.2 -32.2 -24.3 -38.6 -32.9 -5.9 -7.9 -2.5 -17.3 7.6 -21.2 5.1 -1.9 10.2 -1.3 15 1.6 1.7 1.1 7.5 6.7 13 12.6 12.4 13.4 21.8 21.4 35.9 30.8 31.4 20.8 67.5 33 105.2 35.5 44.6 3 84.9 -10.4 105.2 -34.9 2.9 -3.6 7.2 -8.7 9.4 -11.4 4.8 -5.6 8.8 -7.6 15.5 -7.6 9.6 0 14.6 6.3 12.3 15.2 -0.9 3.3 -2.9 6 -8.9 11.7 -23.6 22.7 -59.4 39.1 -98.3 45 -17.4 2.7 -43.9 2.7 -60.6 0.1z" />
+          <path
+            d="M1530.5 574.5 c-17.1 -3.9 -29 -11.6 -35.7 -23.4 -1.3 -2.3 -3.2 -4.4 -4.3 -4.6 -18.4 -4.3 -63.1 -5.4 -97.5 -2.4 -27 2.3 -76.2 10.7 -110.2 18.8 -14 3.4 -16 3.2 -19.7 -1.5 l-2.1 -2.7 0 -243.6 c0 -164.5 0.3 -244.8 1 -247.3 1.8 -6.2 3.5 -6.8 19.6 -6.8 7.8 0 14.9 -0.3 15.8 -0.6 1.4 -0.5 1.6 -2.8 1.6 -14.6 0 -15.9 0.9 -19 6.2 -20.7 8.7 -2.7 44.9 -8.2 67.7 -10.2 17.4 -1.5 57.7 -0.7 73.6 1.6 38.7 5.3 69.5 17.4 92.5 36.1 l7.6 6.1 3.9 -3.4 c6.1 -5.1 21.1 -15.1 28.6 -18.9 22.1 -11.1 44.9 -17.5 75 -21 19.2 -2.2 60.7 -1.5 85.4 1.5 19.5 2.4 44.8 6.6 48.6 8.2 4.3 1.7 4.9 4.3 5.2 20.4 l0.2 15 15.3 0.3 15.2 0.3 0 252.4 0 252.4 -3.2 -0.6 c-1.8 -0.3 -8 -1.7 -13.8 -3 -77.3 -18 -139.9 -23.8 -191.6 -17.8 -7.1 0.9 -13.6 1.8 -14.4 2 -0.8 0.3 -2.3 2.3 -3.3 4.4 -4.5 9.8 -18.2 19.1 -34.1 23.1 -9.2 2.3 -23.8 2.5 -33.1 0.5z m24.4 -15.5 c14 -1.8 24.1 -8.3 29.2 -18.5 1.7 -3.6 3.7 -6.9 4.4 -7.5 4.3 -3.6 38.3 -7 70.6 -7 44.3 0 84.6 4.9 136.6 16.6 8.3 1.9 15.8 3.4 16.7 3.4 1.5 0 1.6 -20.9 1.6 -233.9 l0 -233.9 -9.2 -0.4 c-5.1 -0.3 -9.6 -0.3 -10 -0.1 -0.5 0.2 -0.8 97 -0.8 215.1 0 144.7 -0.3 215.9 -1 218.4 -1.2 4.2 -4.2 6.8 -7.8 6.8 -1.3 0 -9 -1.8 -17.1 -4 -40.1 -10.8 -69.5 -15.2 -101.6 -15.3 -24.3 0 -35 1.2 -54 6.3 -22.5 6 -39.2 14.3 -59.3 29.7 -6.3 4.8 -8.6 4.4 -17.2 -2.8 -2.5 -2 -8.5 -6.2 -13.5 -9.2 -37.9 -22.9 -82.3 -29.4 -141.5 -20.6 -15.9 2.4 -45.2 8.7 -60 12.9 -12.9 3.7 -16.3 3.8 -19.5 0.5 l-2.5 -2.4 0 -217.5 0 -217.4 -7.2 -0.7 c-4 -0.4 -8.6 -0.5 -10.3 -0.3 l-3 0.3 -0.3 234.4 -0.2 234.4 3.7 -0.6 c2.1 -0.3 12.4 -2.4 22.8 -4.7 51.9 -11.3 91.4 -15.6 137.8 -14.7 27.6 0.5 55.9 3.1 60.7 5.7 1 0.5 2.8 3.1 4 5.7 5.9 12.7 15.1 18.8 32.5 21.3 7 1 7.2 1 15.4 0z m9.5 -52.5 c18.3 -11 42.8 -19.3 67.7 -23.1 15.7 -2.4 50.1 -2.4 69.9 0 19.2 2.3 37 5.6 56.5 10.6 8.8 2.2 16.6 4 17.3 4 0.9 0 1.2 -46.5 1.2 -229 0 -125.9 -0.1 -229 -0.3 -229 -0.1 0 -4.9 -0.9 -10.7 -2 -41.5 -7.9 -87.3 -9.6 -121.5 -4.5 -33.6 5.1 -65.2 18.5 -83.7 35.7 l-5.7 5.3 -0.3 218.8 c-0.2 120.3 -0.2 218.7 0 218.7 0.2 0 4.5 -2.5 9.6 -5.5z m-26.4 -213 l0 -217.5 -3.7 -4 c-5.7 -6.3 -17.9 -15.1 -29.1 -20.9 -36.5 -18.7 -90.7 -25.1 -149.7 -17.6 -15.7 2.1 -35.4 5.4 -38.2 6.5 l-2.3 1 0 229 c0 217.8 0.1 229.1 1.8 228.6 15.2 -4.8 53.2 -12.7 73.7 -15.2 19.5 -2.5 54.8 -2.5 70.4 -0.1 24.6 3.9 50.7 12.7 66.9 22.7 4.2 2.6 8.3 4.8 9 4.9 0.9 0.1 1.2 -44 1.2 -217.4z" />
+          <path
+            d="M1617.9 396.8 c-0.3 -27.1 0.5 -32.5 5.7 -39.4 4.3 -5.6 10.5 -8.6 18.8 -9.2 12.7 -0.8 21.3 3.5 26.3 13 2.5 4.8 2.8 6.5 3.1 18.6 l0.4 13.2 16.9 0 16.9 0 0 6 0 6 -44 0 -44 0 -0.1 -8.2z m42.9 -15.7 c-0.3 -10.2 -0.6 -12.4 -2.4 -14.7 -5.3 -7.2 -13.7 -9.2 -21.4 -5.2 -6.9 3.6 -8.4 7.1 -8.9 20.6 l-0.3 11.2 16.7 0 16.7 0 -0.4 -11.9z" />
+          <path
+            d="M1611 317.5 l0 -14.5 42.5 0 42.5 0 0 -9 0 -9 4.9 0 c2.8 0 5.2 0.4 5.5 0.8 0.2 0.4 0.2 11 -0.1 23.5 l-0.6 22.7 -4.8 0 -4.8 0 -0.3 -8.7 -0.3 -8.8 -36.7 -0.3 -36.8 -0.2 0 9 0 9 -5.5 0 -5.5 0 0 -14.5z" />
+          <path
+            d="M1679.9 269.5 c-9.9 -3.1 -14.9 -13 -15.3 -29.8 l-0.2 -9.2 -4.1 0.1 c-5.2 0.1 -9.1 2.6 -10.9 6.9 -3 7.3 -0.6 16.7 4.9 19.3 2.5 1.2 2.7 1.8 2.7 6.8 0 6.1 -0.4 6.3 -6.6 3.5 -4.9 -2.2 -9.7 -7.8 -11.3 -13 -1.4 -4.9 -1.4 -15.8 0 -20.2 1.8 -5.2 5.6 -9.7 10.2 -12.1 3.9 -2.1 5.9 -2.3 29.2 -2.8 13.8 -0.3 25.6 -0.9 26.3 -1.3 0.9 -0.6 1.2 0.6 1.2 5.2 0 5.7 -0.1 6.1 -2.3 6.1 -3.7 0 -3.8 1 -0.5 5.8 2.5 3.6 3.2 5.8 3.6 11.2 0.5 8 -0.8 12.8 -5.1 17.6 -5.5 6.4 -13.5 8.5 -21.8 5.9z m12.4 -12.6 c6.3 -4.9 5.4 -17.2 -1.8 -23.9 -2.1 -2 -3.9 -2.5 -9.7 -2.8 l-7 -0.4 0.4 9.8 c0.3 6.7 1 10.9 2.1 13.1 3.2 6.1 11.1 8.1 16 4.2z" />
+          <path
+            d="M1639 199.1 l0 -5.9 12.6 -5.2 c6.9 -2.8 16.7 -6.7 21.7 -8.7 5.1 -1.9 10.3 -3.9 11.7 -4.5 2.3 -0.9 1.3 -1.5 -10 -6 -6.9 -2.7 -17.7 -6.9 -24 -9.3 l-11.5 -4.3 -0.3 -6.1 c-0.2 -3.5 0.1 -6.1 0.7 -6.1 1.4 0 63.2 25.5 73.6 30.4 13.2 6.2 18.5 13.2 18.5 24.5 l0 4.1 -5 0 c-4.7 0 -5 -0.2 -5 -2.5 0 -6.8 -5.1 -12.8 -14.2 -17 l-5.8 -2.6 -18.7 7.6 c-10.4 4.3 -24.2 9.9 -30.8 12.6 -6.5 2.7 -12.3 4.9 -12.7 4.9 -0.4 0 -0.8 -2.7 -0.8 -5.9z" />
+          <path d="M1372 427 l0 -6 39.5 0 39.5 0 0 -19.5 0 -19.5 5.5 0 5.5 0 0 25.5 0 25.5 -45 0 -45 0 0 -6z" />
+          <path
+            d="M1416.3 367.5 c-16.4 -4.5 -25.2 -19 -21.2 -35 1.4 -5.4 7.6 -12.8 13.1 -15.6 4.2 -2.2 19.5 -4.6 22.2 -3.6 1.4 0.6 1.6 3.1 1.6 22.2 l0 21.5 2.8 0 c4.4 -0.1 10.7 -3.5 13.7 -7.5 5.3 -6.8 4.5 -18 -1.7 -25.1 l-3.1 -3.5 2.4 -2.7 c1.3 -1.5 2.7 -3.1 3 -3.5 1 -1.3 8.8 6.2 11.1 10.7 2.9 5.7 3.6 16.8 1.4 23.3 -1.9 5.7 -7 12.1 -12.1 15.3 -7.8 4.8 -22.5 6.4 -33.2 3.5z m5.7 -26.5 c0 -15.8 0 -16 -2.2 -16 -3.3 0 -10.1 3.7 -12.2 6.7 -1.1 1.4 -2.1 4.7 -2.4 7.3 -0.6 6.8 1.8 11.4 8.2 15.1 8.8 5 8.6 5.3 8.6 -13.1z" />
+          <path
+            d="M1436.1 297.6 c-10.2 -3.4 -14.3 -10.9 -14.9 -27.8 -0.4 -11.7 -0.5 -11.8 -2.9 -11.8 -3.7 0 -8.8 2.5 -11.1 5.5 -4.3 5.5 -2.2 18.5 3.4 21.6 2.4 1.2 2.5 1.7 1.9 6.4 -0.4 2.7 -0.9 5.1 -1 5.3 -0.6 0.7 -8.1 -3 -10.3 -5.1 -6 -5.6 -8.7 -17.5 -6.2 -27.7 1.6 -6.8 8.5 -14.3 14.5 -15.8 2.2 -0.6 14.9 -1.2 28.3 -1.4 l24.2 -0.3 0 5.3 c0 5.1 -0.1 5.2 -2.9 5.2 -3.8 0 -4.6 1.3 -2.2 3.4 1.1 1 2.9 4.1 4.1 6.9 2.9 6.6 2.4 15.5 -1.1 21.7 -4.4 7.7 -14.7 11.5 -23.8 8.6z m13.6 -14.1 c4.4 -5.1 2.4 -17.5 -3.7 -23 -1.7 -1.6 -3.6 -2 -8.9 -2 l-6.6 0 0.1 9 c0.1 10.2 2 15.6 6.3 18.1 3.8 2.1 10.1 1.1 12.8 -2.1z" />
+          <path
+            d="M1395 216.5 l0 -5.5 4.6 0 4.7 0 -4.1 -4.4 c-2.3 -2.5 -4.4 -5.7 -4.7 -7.3 -0.4 -1.5 -0.9 -3.4 -1.1 -4.2 -0.3 -0.8 -0.2 -4.1 0.2 -7.3 l0.7 -5.9 5.5 0.3 5.6 0.3 0 9.2 c0.1 9.9 1.1 12.4 7 16.7 2.5 2 4.3 2.1 25.7 2.4 l22.9 0.3 0 5.5 0 5.4 -33.5 0 -33.5 0 0 -5.5z" />
+          <path
+            d="M1395 158.5 l0 -5.5 3.6 0 3.5 0 -2.7 -3.5 c-9.9 -13 -5.5 -31.6 8.4 -35.5 2.1 -0.5 14.7 -1 29 -1 l25.2 0 0 5.5 0 5.5 -24 0 c-25.8 0 -28 0.4 -31.4 5.2 -2 2.9 -2.1 12 -0.1 15.7 0.8 1.6 2.8 4 4.5 5.5 l3.2 2.6 23.9 0 23.9 0 0 5.5 0 5.5 -33.5 0 -33.5 0 0 -5.5z" />
+          <path
+            d="M0.7 521.3 c-0.4 -0.3 -0.7 -3.9 -0.7 -7.9 0 -8.5 0.1 -8.6 10.8 -10.9 10 -2.1 18.3 -5.4 21.3 -8.6 3.9 -4.2 5.8 -12.6 7 -30.9 1.5 -24.2 0.6 -392.6 -1 -404 -1.5 -11 -2.8 -14.9 -5.9 -18.2 -2.7 -2.9 -10.8 -5.9 -20.7 -7.8 -11.7 -2.1 -10.5 -0.9 -10.5 -11.1 l0 -9.1 14.3 0.8 c18.4 1 84 1 102.5 0 l14.2 -0.8 0 8.5 c0 4.7 -0.4 8.8 -0.8 9.1 -0.5 0.3 -5.3 1.5 -10.8 2.7 -17.2 3.6 -21.3 6.4 -23.8 16.3 -3.9 14.9 -4.1 26.1 -4.1 234.8 0 110.9 0.3 202 0.7 202.3 2.7 2.7 106.7 4 128.3 1.6 14.7 -1.6 28.8 -5.1 35.7 -8.8 12.7 -6.8 25.2 -22.5 34.2 -42.8 2.7 -6 5.3 -11.6 5.9 -12.2 1 -1.4 10.2 -1.8 15.5 -0.7 5.3 1.1 5.6 -1.9 -5.3 56 -3.6 18.7 -7 35.8 -7.7 38 l-1.3 3.9 -148.6 0.3 c-81.7 0.1 -148.9 -0.1 -149.2 -0.5z" />
+          <path
+            d="M1049.1 470.9 c-40.7 -4.3 -82.3 -23.1 -119.6 -54 -26.7 -22.2 -55.9 -56.1 -74.3 -86.1 -9.6 -15.7 -19.4 -40.8 -22.9 -58.8 -2.8 -14.5 -2.5 -52.6 0.5 -66.6 8 -37.1 28.2 -69.8 60.3 -98 26.4 -23.2 59 -41.7 107.9 -61.2 30 -12 67.4 -25.2 71.5 -25.2 5.7 0 8.4 5.5 4.8 9.9 -1.2 1.4 -9.3 4.9 -22.3 9.7 -18.7 6.8 -20 7.5 -14.5 6.9 44.7 -4.1 82.7 1.5 112.9 16.7 30.3 15.2 52.4 37.3 67.4 67.3 14.2 28.5 22.6 72.2 20.8 108.5 -2.8 54.1 -17.7 105.6 -43.1 148.5 -17.2 29 -36.9 51.5 -55.4 63 -26 16.2 -58.9 23 -94 19.4z m47.9 -18.8 c11.7 -2.7 19 -5.4 27.9 -10.2 27.6 -14.9 52 -45.1 72.6 -89.9 25.2 -55.2 32.9 -118.4 21 -173.5 -5.7 -26.5 -15.4 -46.9 -32.1 -67.5 -13.5 -16.8 -36.5 -32.1 -60.3 -40.4 -37.9 -13.2 -89.6 -12.1 -136.1 2.9 -63.1 20.4 -113.7 63.3 -133.4 113 -12.5 31.8 -13.4 67.9 -2.5 101 8.1 24.5 23.3 49.4 47 77.1 41.1 48 91 79.8 137.9 87.8 14.7 2.5 14.5 2.5 32.5 2.1 12.5 -0.3 19.3 -0.9 25.5 -2.4z" />
+          <path
+            d="M1039.9 299.3 l-5.4 -3.8 -11 0 c-6 0 -17.5 0.4 -25.5 0.9 -14.3 0.8 -14.6 0.8 -18 -1.5 -2 -1.4 -4.6 -4.6 -6 -7.4 -2.1 -4.3 -2.5 -6.4 -2.5 -14.5 0 -7.8 0.4 -10.4 2.4 -14.8 2.8 -6.3 7.8 -10.9 12.7 -11.8 5.9 -1.1 28 0.4 38.2 2.5 18.4 3.9 28.1 9.1 32.4 17.4 2.6 5.2 3.5 16.9 1.8 25 -2.5 12.1 -9.2 14.9 -19.1 8z" />
+          <path
+            d="M496.5 446.3 c-29.3 -3.7 -59.8 -14.7 -83.5 -30 -47.8 -31 -77.1 -78.5 -86.6 -140.3 -2.1 -14 -2.4 -45.9 -0.6 -60 3.5 -26.1 11.9 -53.3 23.7 -76.5 20.1 -39.7 45.7 -68.7 82.6 -93.7 28.4 -19.3 68.9 -36.6 100.7 -43.2 11.6 -2.5 13.9 -2.6 43.1 -2.6 38.1 0 42.6 0.7 76.3 11.6 14.1 4.6 16.8 6.4 16.8 10.9 0 1.1 -0.7 3.1 -1.6 4.3 -2.3 3.3 -7.5 2.9 -22.2 -1.7 -25.5 -8 -40.5 -10.8 -61.7 -11.7 -34.2 -1.5 -64.4 5.6 -106.9 25 -4.4 2 -7.7 3.8 -7.5 4.1 0.3 0.2 3.1 -0.5 6.4 -1.6 42.7 -14.2 111.4 -15.4 160.2 -3 58.6 15 102.5 46.5 125.8 90.4 5.1 9.6 11.6 28.5 13.8 40.2 3.7 19.4 3 42.3 -1.9 64.2 -8.6 38.4 -23.6 68.6 -51.9 104.2 -47.5 59.5 -110.8 99.3 -172.7 108.5 -9.7 1.5 -43.4 2.1 -52.3 0.9z m53 -17.4 c47.8 -7.9 91.3 -32.2 134.7 -75.1 35.6 -35.3 61.6 -78.4 70.9 -117.3 19.7 -83.1 -22 -149.9 -112.2 -179.6 -27.9 -9.2 -50.1 -12.3 -86.4 -12.3 -37.1 0.1 -56.6 3 -85.6 13 -19.7 6.8 -26.5 9.8 -40.2 18.1 -29.1 17.5 -50.3 41.3 -66.7 74.8 -14.5 29.6 -20.6 54.5 -21.7 87.6 -0.6 20.4 0.2 30.7 4.3 50.2 6.6 31.4 22.3 62.6 43 85.5 16.3 18 43.1 36.5 64.9 44.8 32.6 12.3 63.1 15.7 95 10.3z" />
+          <path
+            d="M565.9 278.8 l-5.3 -4.3 -26.3 0.3 c-30.6 0.4 -31.7 0.1 -35.4 -7.6 -3.1 -6.3 -3.7 -17.9 -1.4 -25.8 3.4 -11.8 7.3 -14.5 21.6 -15.2 16.7 -0.8 38.6 2.8 50.4 8.2 12.3 5.6 17 13.3 16.9 27.7 -0.1 19.7 -8.3 26.3 -20.5 16.7z" />
+        </g>
+      </svg>
+    </div>
+    <div class="nav-right">
+      <span class="nav-level" id="navLevel">—</span>
+      <a href="account" class="hoverable" id="navName">—</a>
+    </div>
+  </nav>
 
-    <!-- QUICK STATS BAR -->
-    <div class="card card-statsbar">
-      <div class="stat-bar-item">
-        <div class="stat-bar-icon">🔥</div>
-        <div class="stat-bar-info">
-          <div class="stat-bar-val" id="statStreak">—</div>
-          <div class="stat-bar-key">Day Streak</div>
-        </div>
-      </div>
-      <div class="stat-bar-item">
-        <div class="stat-bar-icon">📖</div>
-        <div class="stat-bar-info">
-          <div class="stat-bar-val" id="statWords">—</div>
-          <div class="stat-bar-key">Words Learned</div>
-        </div>
-      </div>
-      <div class="stat-bar-item">
-        <div class="stat-bar-icon">⚡</div>
-        <div class="stat-bar-info">
-          <div class="stat-bar-val" id="statXP">—</div>
-          <div class="stat-bar-key">Total XP</div>
-        </div>
-      </div>
-      <div class="stat-bar-item">
-        <div class="stat-bar-icon">🎯</div>
-        <div class="stat-bar-info">
-          <div class="stat-bar-val" id="statAccuracy">—</div>
-          <div class="stat-bar-key">Accuracy</div>
-        </div>
-      </div>
-      <div class="stat-bar-item">
-        <div class="stat-bar-icon">🏰</div>
-        <div class="stat-bar-info">
-          <div class="stat-bar-val" id="statWave">—</div>
-          <div class="stat-bar-key">Tower Progress</div>
-        </div>
-      </div>
+  <main>
+    <div class="greeting">
+      <div class="greeting-main" id="greetingMain">—</div>
     </div>
 
-    <!-- STREAK CARD -->
-    <div class="card card-streak">
-      <div class="card-label">Streak</div>
-      <div class="streak-number" id="streakNumber">—</div>
-      <div class="streak-sub" id="streakBest">Personal best: — days</div>
-      <div class="streak-dots" id="streakDots"></div>
-      <div class="streak-xp">
-        <div class="xp-label">
-          <span>Daily XP</span>
-          <span id="xpLabel">— / —</span>
+    <div class="grid">
+
+      <!-- QUICK STATS BAR -->
+      <div class="card card-statsbar">
+        <div class="stat-bar-item">
+          <div class="stat-bar-icon">🔥</div>
+          <div class="stat-bar-info">
+            <div class="stat-bar-val" id="statStreak">—</div>
+            <div class="stat-bar-key">Day Streak</div>
+          </div>
         </div>
-        <div class="xp-bar">
-          <div class="xp-fill" id="xpFill" style="width:0%"></div>
+        <div class="stat-bar-item">
+          <div class="stat-bar-icon">🔠</div>
+          <div class="stat-bar-info">
+            <div class="stat-bar-val" id="statWords">—</div>
+            <div class="stat-bar-key">Words Learned</div>
+          </div>
+        </div>
+        <div class="stat-bar-item">
+          <div class="stat-bar-icon"><svg width="2rem" height="auto" viewBox="0 0 563 562" version="1.1"
+              xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve"
+              xmlns:serif="http://www.serif.com/"
+              style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2">
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path
+                  d="M1530.5,574.5C1513.4,570.6 1501.5,562.9 1494.8,551.1C1493.5,548.8 1491.6,546.7 1490.5,546.5C1472.1,542.2 1427.4,541.1 1393,544.1C1366,546.4 1316.8,554.8 1282.8,562.9C1268.8,566.3 1266.8,566.1 1263.1,561.4L1261,558.7L1261,315.1C1261,150.6 1261.3,70.3 1262,67.8C1263.8,61.6 1265.5,61 1281.6,61C1289.4,61 1296.5,60.7 1297.4,60.4C1298.8,59.9 1299,57.6 1299,45.8C1299,29.9 1299.9,26.8 1305.2,25.1C1313.9,22.4 1350.1,16.9 1372.9,14.9C1390.3,13.4 1430.6,14.2 1446.5,16.5C1485.2,21.8 1516,33.9 1539,52.6L1546.6,58.7L1550.5,55.3C1556.6,50.2 1571.6,40.2 1579.1,36.4C1601.2,25.3 1624,18.9 1654.1,15.4C1673.3,13.2 1714.8,13.9 1739.5,16.9C1759,19.3 1784.3,23.5 1788.1,25.1C1792.4,26.8 1793,29.4 1793.3,45.5L1793.5,60.5L1808.8,60.8L1824,61.1L1824,565.9L1820.8,565.3C1819,565 1812.8,563.6 1807,562.3C1729.7,544.3 1667.1,538.5 1615.4,544.5C1608.3,545.4 1601.8,546.3 1601,546.5C1600.2,546.8 1598.7,548.8 1597.7,550.9C1593.2,560.7 1579.5,570 1563.6,574C1554.4,576.3 1539.8,576.5 1530.5,574.5ZM1554.9,559C1568.9,557.2 1579,550.7 1584.1,540.5C1585.8,536.9 1587.8,533.6 1588.5,533C1592.8,529.4 1626.8,526 1659.1,526C1703.4,526 1743.7,530.9 1795.7,542.6C1804,544.5 1811.5,546 1812.4,546C1813.9,546 1814,525.1 1814,312.1L1814,78.2L1804.8,77.8C1799.7,77.5 1795.2,77.5 1794.8,77.7C1794.3,77.9 1794,174.7 1794,292.8C1794,437.5 1793.7,508.7 1793,511.2C1791.8,515.4 1788.8,518 1785.2,518C1783.9,518 1776.2,516.2 1768.1,514C1728,503.2 1698.6,498.8 1666.5,498.7C1642.2,498.7 1631.5,499.9 1612.5,505C1590,511 1573.3,519.3 1553.2,534.7C1546.9,539.5 1544.6,539.1 1536,531.9C1533.5,529.9 1527.5,525.7 1522.5,522.7C1484.6,499.8 1440.2,493.3 1381,502.1C1365.1,504.5 1335.8,510.8 1321,515C1308.1,518.7 1304.7,518.8 1301.5,515.5L1299,513.1L1299,78.2L1291.8,77.5C1287.8,77.1 1283.2,77 1281.5,77.2L1278.5,77.5L1278.2,311.9L1278,546.3L1281.7,545.7C1283.8,545.4 1294.1,543.3 1304.5,541C1356.4,529.7 1395.9,525.4 1442.3,526.3C1469.9,526.8 1498.2,529.4 1503,532C1504,532.5 1505.8,535.1 1507,537.7C1512.9,550.4 1522.1,556.5 1539.5,559C1546.5,560 1546.7,560 1554.9,559ZM1564.4,506.5C1582.7,495.5 1607.2,487.2 1632.1,483.4C1647.8,481 1682.2,481 1702,483.4C1721.2,485.7 1739,489 1758.5,494C1767.3,496.2 1775.1,498 1775.8,498C1776.7,498 1777,451.5 1777,269C1777,143.1 1776.9,40 1776.7,40C1776.6,40 1771.8,39.1 1766,38C1724.5,30.1 1678.7,28.4 1644.5,33.5C1610.9,38.6 1579.3,52 1560.8,69.2L1555.1,74.5L1554.8,293.3C1554.6,413.6 1554.6,512 1554.8,512C1555,512 1559.3,509.5 1564.4,506.5ZM1538,293.5L1538,76L1534.3,72C1528.6,65.7 1516.4,56.9 1505.2,51.1C1468.7,32.4 1414.5,26 1355.5,33.5C1339.8,35.6 1320.1,38.9 1317.3,40L1315,41L1315,270C1315,487.8 1315.1,499.1 1316.8,498.6C1332,493.8 1370,485.9 1390.5,483.4C1410,480.9 1445.3,480.9 1460.9,483.3C1485.5,487.2 1511.6,496 1527.8,506C1532,508.6 1536.1,510.8 1536.8,510.9C1537.7,511 1538,466.9 1538,293.5Z"
+                  style="fill-rule:nonzero" />
+              </g>
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path
+                  d="M1617.9,396.8C1617.6,369.7 1618.4,364.3 1623.6,357.4C1627.9,351.8 1634.1,348.8 1642.4,348.2C1655.1,347.4 1663.7,351.7 1668.7,361.2C1671.2,366 1671.5,367.7 1671.8,379.8L1672.2,393L1706,393L1706,405L1618,405L1617.9,396.8ZM1660.8,381.1C1660.5,370.9 1660.2,368.7 1658.4,366.4C1653.1,359.2 1644.7,357.2 1637,361.2C1630.1,364.8 1628.6,368.3 1628.1,381.8L1627.8,393L1661.2,393L1660.8,381.1Z"
+                  style="fill-rule:nonzero" />
+              </g>
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path
+                  d="M1611,332L1611,303L1696,303L1696,285L1700.9,285C1703.7,285 1706.1,285.4 1706.4,285.8C1706.6,286.2 1706.6,296.8 1706.3,309.3L1705.7,332L1696.1,332L1695.8,323.3L1695.5,314.5L1658.8,314.2L1622,314L1622,332L1611,332Z"
+                  style="fill-rule:nonzero" />
+              </g>
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path
+                  d="M1679.9,269.5C1670,266.4 1665,256.5 1664.6,239.7L1664.4,230.5L1660.3,230.6C1655.1,230.7 1651.2,233.2 1649.4,237.5C1646.4,244.8 1648.8,254.2 1654.3,256.8C1656.8,258 1657,258.6 1657,263.6C1657,269.7 1656.6,269.9 1650.4,267.1C1645.5,264.9 1640.7,259.3 1639.1,254.1C1637.7,249.2 1637.7,238.3 1639.1,233.9C1640.9,228.7 1644.7,224.2 1649.3,221.8C1653.2,219.7 1655.2,219.5 1678.5,219C1692.3,218.7 1704.1,218.1 1704.8,217.7C1705.7,217.1 1706,218.3 1706,222.9C1706,228.6 1705.9,229 1703.7,229C1700,229 1699.9,230 1703.2,234.8C1705.7,238.4 1706.4,240.6 1706.8,246C1707.3,254 1706,258.8 1701.7,263.6C1696.2,270 1688.2,272.1 1679.9,269.5ZM1692.3,256.9C1698.6,252 1697.7,239.7 1690.5,233C1688.4,231 1686.6,230.5 1680.8,230.2L1673.8,229.8L1674.2,239.6C1674.5,246.3 1675.2,250.5 1676.3,252.7C1679.5,258.8 1687.4,260.8 1692.3,256.9Z"
+                  style="fill-rule:nonzero" />
+              </g>
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path
+                  d="M1639,199.1L1639,193.2L1651.6,188C1658.5,185.2 1668.3,181.3 1673.3,179.3C1678.4,177.4 1683.6,175.4 1685,174.8C1687.3,173.9 1686.3,173.3 1675,168.8C1668.1,166.1 1657.3,161.9 1651,159.5L1639.5,155.2L1639.2,149.1C1639,145.6 1639.3,143 1639.9,143C1641.3,143 1703.1,168.5 1713.5,173.4C1726.7,179.6 1732,186.6 1732,197.9L1732,202L1727,202C1722.3,202 1722,201.8 1722,199.5C1722,192.7 1716.9,186.7 1707.8,182.5L1702,179.9L1683.3,187.5C1672.9,191.8 1659.1,197.4 1652.5,200.1C1646,202.8 1640.2,205 1639.8,205C1639.4,205 1639,202.3 1639,199.1Z"
+                  style="fill-rule:nonzero" />
+              </g>
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path d="M1372,433L1372,421L1451,421L1451,382L1462,382L1462,433L1372,433Z" style="fill-rule:nonzero" />
+              </g>
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path
+                  d="M1416.3,367.5C1399.9,363 1391.1,348.5 1395.1,332.5C1396.5,327.1 1402.7,319.7 1408.2,316.9C1412.4,314.7 1427.7,312.3 1430.4,313.3C1431.8,313.9 1432,316.4 1432,335.5L1432,357L1434.8,357C1439.2,356.9 1445.5,353.5 1448.5,349.5C1453.8,342.7 1453,331.5 1446.8,324.4L1443.7,320.9L1446.1,318.2C1447.4,316.7 1448.8,315.1 1449.1,314.7C1450.1,313.4 1457.9,320.9 1460.2,325.4C1463.1,331.1 1463.8,342.2 1461.6,348.7C1459.7,354.4 1454.6,360.8 1449.5,364C1441.7,368.8 1427,370.4 1416.3,367.5ZM1422,341C1422,325.2 1422,325 1419.8,325C1416.5,325 1409.7,328.7 1407.6,331.7C1406.5,333.1 1405.5,336.4 1405.2,339C1404.6,345.8 1407,350.4 1413.4,354.1C1422.2,359.1 1422,359.4 1422,341Z"
+                  style="fill-rule:nonzero" />
+              </g>
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path
+                  d="M1436.1,297.6C1425.9,294.2 1421.8,286.7 1421.2,269.8C1420.8,258.1 1420.7,258 1418.3,258C1414.6,258 1409.5,260.5 1407.2,263.5C1402.9,269 1405,282 1410.6,285.1C1413,286.3 1413.1,286.8 1412.5,291.5C1412.1,294.2 1411.6,296.6 1411.5,296.8C1410.9,297.5 1403.4,293.8 1401.2,291.7C1395.2,286.1 1392.5,274.2 1395,264C1396.6,257.2 1403.5,249.7 1409.5,248.2C1411.7,247.6 1424.4,247 1437.8,246.8L1462,246.5L1462,251.8C1462,256.9 1461.9,257 1459.1,257C1455.3,257 1454.5,258.3 1456.9,260.4C1458,261.4 1459.8,264.5 1461,267.3C1463.9,273.9 1463.4,282.8 1459.9,289C1455.5,296.7 1445.2,300.5 1436.1,297.6ZM1449.7,283.5C1454.1,278.4 1452.1,266 1446,260.5C1444.3,258.9 1442.4,258.5 1437.1,258.5L1430.5,258.5L1430.6,267.5C1430.7,277.7 1432.6,283.1 1436.9,285.6C1440.7,287.7 1447,286.7 1449.7,283.5Z"
+                  style="fill-rule:nonzero" />
+              </g>
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path
+                  d="M1395,222L1395,211L1404.3,211L1400.2,206.6C1397.9,204.1 1395.8,200.9 1395.5,199.3C1395.1,197.8 1394.6,195.9 1394.4,195.1C1394.1,194.3 1394.2,191 1394.6,187.8L1395.3,181.9L1400.8,182.2L1406.4,182.5L1406.4,191.7C1406.5,201.6 1407.5,204.1 1413.4,208.4C1415.9,210.4 1417.7,210.5 1439.1,210.8L1462,211.1L1462,222L1395,222Z"
+                  style="fill-rule:nonzero" />
+              </g>
+              <g transform="matrix(1,0,0,1,-1261,-14.113438)">
+                <path
+                  d="M1395,164L1395,153L1402.1,153L1399.4,149.5C1389.5,136.5 1393.9,117.9 1407.8,114C1409.9,113.5 1422.5,113 1436.8,113L1462,113L1462,124L1438,124C1412.2,124 1410,124.4 1406.6,129.2C1404.6,132.1 1404.5,141.2 1406.5,144.9C1407.3,146.5 1409.3,148.9 1411,150.4L1414.2,153L1462,153L1462,164L1395,164Z"
+                  style="fill-rule:nonzero" />
+              </g>
+            </svg></div>
+          <div class="stat-bar-info">
+            <div class="stat-bar-val" id="statXP">—</div>
+            <div class="stat-bar-key">Loomlars</div>
+          </div>
+        </div>
+        <div class="stat-bar-item">
+          <div class="stat-bar-icon">🎯</div>
+          <div class="stat-bar-info">
+            <div class="stat-bar-val" id="statAccuracy">—</div>
+            <div class="stat-bar-key">Accuracy</div>
+          </div>
+        </div>
+        <div class="stat-bar-item">
+          <div class="stat-bar-icon">🏰</div>
+          <div class="stat-bar-info">
+            <div class="stat-bar-val" id="statWave">—</div>
+            <div class="stat-bar-key">Tower Progress</div>
+          </div>
         </div>
       </div>
+
+      <!-- STREAK CARD -->
+      <div class="card card-streak">
+        <div class="card-label">Streak</div>
+        <div class="streak-number" id="streakNumber">—</div>
+        <div class="streak-sub" id="streakBest">Personal best: — days</div>
+        <div class="streak-dots" id="streakDots"></div>
+        <div class="streak-xp">
+          <div class="xp-label">
+            <span>Daily Loomlars</span>
+            <span id="xpLabel">— / —</span>
+          </div>
+          <div class="xp-bar">
+            <div class="xp-fill" id="xpFill" style="width:0%"></div>
+          </div>
+        </div>
+        <a href="/word">
+          <button class="hoverable btn-play" style="margin-top: 3.1rem">
+            <svg xmlns="http://www.w3.org/2000/svg" width="0.72rem" height="auto" viewBox="0 0 24 24"
+              fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-book">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <path
+                d="M21.5 5.134a1 1 0 0 1 .493 .748l.007 .118v13a1 1 0 0 1 -1.5 .866a8 8 0 0 0 -7.5 -.266v-15.174a10 10 0 0 1 8.5 .708m-10.5 -.707l.001 15.174a8 8 0 0 0 -7.234 .117l-.327 .18l-.103 .044l-.049 .016l-.11 .026l-.061 .01l-.117 .006h-.042l-.11 -.012l-.077 -.014l-.108 -.032l-.126 -.056l-.095 -.056l-.089 -.067l-.06 -.056l-.073 -.082l-.064 -.089l-.022 -.036l-.032 -.06l-.044 -.103l-.016 -.049l-.026 -.11l-.01 -.061l-.004 -.049l-.002 -13.068a1 1 0 0 1 .5 -.866a10 10 0 0 1 8.5 -.707" />
+            </svg>
+            Practice again
+          </button>
+        </a>
+
+        <a href="/account">
+          <button class="hoverable btn-play" style="margin-top: 1rem">
+            <svg xmlns="http://www.w3.org/2000/svg" width="0.72rem" height="auto" viewBox="0 0 24 24"
+              fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-settings">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <path
+                d="M14.647 4.081a.724 .724 0 0 0 1.08 .448c2.439 -1.485 5.23 1.305 3.745 3.744a.724 .724 0 0 0 .447 1.08c2.775 .673 2.775 4.62 0 5.294a.724 .724 0 0 0 -.448 1.08c1.485 2.439 -1.305 5.23 -3.744 3.745a.724 .724 0 0 0 -1.08 .447c-.673 2.775 -4.62 2.775 -5.294 0a.724 .724 0 0 0 -1.08 -.448c-2.439 1.485 -5.23 -1.305 -3.745 -3.744a.724 .724 0 0 0 -.447 -1.08c-2.775 -.673 -2.775 -4.62 0 -5.294a.724 .724 0 0 0 .448 -1.08c-1.485 -2.439 1.305 -5.23 3.744 -3.745a.722 .722 0 0 0 1.08 -.447c.673 -2.775 4.62 -2.775 5.294 0zm-2.647 4.919a3 3 0 1 0 0 6a3 3 0 0 0 0 -6" />
+            </svg>
+            Settings
+          </button>
+        </a>
+      </div>
+
+      <!-- TOWER DEFENSE CARD -->
+      <div class="card card-tower">
+        <div class="card-label">Tower Defense</div>
+        <div class="tower-preview">
+          <div class="wave-badge" id="waveBadge">WAVE — / —</div>
+          <div class="hp-bar-wrap">
+            <div class="hp-label">CASTLE HP</div>
+            <div class="hp-bar">
+              <div class="hp-fill" id="castleHpFill" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="tower-path"></div>
+          <div class="tower-el" style="left:15%">
+            <div class="tower-top"><span></span><span></span><span></span></div>
+            <div class="tower-body" style="height:36px"></div>
+          </div>
+          <div class="tower-el" style="left:35%">
+            <div class="tower-top"><span></span><span></span><span></span></div>
+            <div class="tower-body" style="height:28px"></div>
+          </div>
+          <div class="tower-el" style="left:58%">
+            <div class="tower-top"><span></span><span></span><span></span></div>
+            <div class="tower-body" style="height:42px"></div>
+          </div>
+          <div class="tower-el" style="left:78%">
+            <div class="tower-top"><span></span><span></span><span></span></div>
+            <div class="tower-body" style="height:32px"></div>
+          </div>
+          <div class="tower-el" style="right:8px">
+            <div class="tower-top" style="width:32px"><span></span><span></span><span></span><span></span></div>
+            <div class="tower-body" style="height:54px;width:26px"></div>
+          </div>
+          <div class="enemy" style="animation-duration:5s;animation-delay:-1s">👾</div>
+          <div class="enemy" style="animation-duration:7s;animation-delay:-3s;bottom:28px;font-size:0.75rem">👾</div>
+        </div>
+        <div class="tower-stats">
+          <div class="stat-item">
+            <span class="stat-val" id="towerBuilt">—</span>
+            <span class="stat-key">Towers</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-val" id="towerEnemies">—</span>
+            <span class="stat-key">Enemies Def.</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-val" id="towerHp">—</span>
+            <span class="stat-key">HP Left</span>
+          </div>
+        </div>
+        <a href="/tower"><button class="hoverable btn-play" id="towerBtn" style="margin-top: 3rem">
+            <div class="btn-play-icon"></div>
+            Continue — Wave —
+          </button></a>
+
+        <a href="/shop"><button class="hoverable btn-play" style="margin-top: 1rem">
+            <svg xmlns="http://www.w3.org/2000/svg" width="0.72rem" height="auto" viewBox="0 0 24 24"
+              fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-shopping-cart">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <path
+                d="M6 2a1 1 0 0 1 .993 .883l.007 .117v1.068l13.071 .935a1 1 0 0 1 .929 1.024l-.01 .114l-1 7a1 1 0 0 1 -.877 .853l-.113 .006h-12v2h10a3 3 0 1 1 -2.995 3.176l-.005 -.176l.005 -.176c.017 -.288 .074 -.564 .166 -.824h-5.342a3 3 0 1 1 -5.824 1.176l-.005 -.176l.005 -.176a3.002 3.002 0 0 1 1.995 -2.654v-12.17h-1a1 1 0 0 1 -.993 -.883l-.007 -.117a1 1 0 0 1 .883 -.993l.117 -.007h2zm0 16a1 1 0 1 0 0 2a1 1 0 0 0 0 -2m11 0a1 1 0 1 0 0 2a1 1 0 0 0 0 -2" />
+            </svg>
+            Shop
+          </button></a>
+      </div>
+
+      <!-- TODAY'S WORDS -->
+      <div class="card card-words">
+        <div class="card-label">Today's Words</div>
+        <div class="word-list" id="wordList">
+          <div style="font-size:0.65rem;color:var(--accent2)">Loading…</div>
+        </div>
+      </div>
+
+      <!-- CORRECT ANSWERS CHART -->
+      <div class="card card-chart">
+        <div class="card-label">Correct Answers / Day</div>
+        <div class="chart-meta">
+          <div class="chart-total" id="chartTotal">—</div>
+          <div class="chart-total-label">total this month</div>
+        </div>
+        <div class="chart-wrap">
+          <svg id="lineChart" viewBox="0 0 560 160" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="chart-x-labels" id="chartLabels"></div>
+      </div>
+
+      <!-- RECENT MISTAKES -->
+      <div class="card card-mistakes">
+        <div class="card-label">Recent Mistakes</div>
+        <div class="mistake-list" id="mistakeList">
+          <div style="font-size:0.65rem;color:var(--accent2)">Loading…</div>
+        </div>
+      </div>
+
     </div>
+  </main>
 
-    <!-- TOWER DEFENSE CARD -->
-    <div class="card card-tower">
-      <div class="card-label">Tower Defense</div>
-      <div class="tower-preview">
-        <div class="wave-badge" id="waveBadge">WAVE — / —</div>
-        <div class="hp-bar-wrap">
-          <div class="hp-label">CASTLE HP</div>
-          <div class="hp-bar"><div class="hp-fill" id="castleHpFill" style="width:0%"></div></div>
-        </div>
-        <div class="tower-path"></div>
-        <div class="tower-el" style="left:15%">
-          <div class="tower-top"><span></span><span></span><span></span></div>
-          <div class="tower-body" style="height:36px"></div>
-        </div>
-        <div class="tower-el" style="left:35%">
-          <div class="tower-top"><span></span><span></span><span></span></div>
-          <div class="tower-body" style="height:28px"></div>
-        </div>
-        <div class="tower-el" style="left:58%">
-          <div class="tower-top"><span></span><span></span><span></span></div>
-          <div class="tower-body" style="height:42px"></div>
-        </div>
-        <div class="tower-el" style="left:78%">
-          <div class="tower-top"><span></span><span></span><span></span></div>
-          <div class="tower-body" style="height:32px"></div>
-        </div>
-        <div class="tower-el" style="right:8px">
-          <div class="tower-top" style="width:32px"><span></span><span></span><span></span><span></span></div>
-          <div class="tower-body" style="height:54px;width:26px"></div>
-        </div>
-        <div class="enemy" style="animation-duration:5s;animation-delay:-1s">👾</div>
-        <div class="enemy" style="animation-duration:7s;animation-delay:-3s;bottom:28px;font-size:0.75rem">👾</div>
-      </div>
-      <div class="tower-stats">
-        <div class="stat-item">
-          <span class="stat-val" id="towerBuilt">—</span>
-          <span class="stat-key">Towers</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-val" id="towerEnemies">—</span>
-          <span class="stat-key">Enemies Def.</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-val" id="towerHp">—</span>
-          <span class="stat-key">HP Left</span>
-        </div>
-      </div>
-      <button class="btn-play" id="towerBtn">
-        <div class="btn-play-icon"></div>
-        Continue — Wave —
-      </button>
-    </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const $bigBall = document.querySelector('.cursor__ball--big');
+      const $smallBall = document.querySelector('.cursor__ball--small');
+      const $cursor = document.querySelector('.cursor');
+      const $hoverables = document.querySelectorAll('.hoverable');
 
-    <!-- TODAY'S WORDS -->
-    <div class="card card-words">
-      <div class="card-label">Today's Words</div>
-      <div class="word-list" id="wordList">
-        <div style="font-size:0.65rem;color:var(--accent2)">Loading…</div>
-      </div>
-    </div>
+      let bigScale = 1;
+      let bigX = 0, bigY = 0;
+      let smallX = 0, smallY = 0;
+      let mouseX = 0, mouseY = 0;
 
-    <!-- CORRECT ANSWERS CHART -->
-    <div class="card card-chart">
-      <div class="card-label">Correct Answers / Day</div>
-      <div class="chart-meta">
-        <div class="chart-total" id="chartTotal">—</div>
-        <div class="chart-total-label">total this month</div>
-      </div>
-      <div class="chart-wrap">
-        <svg id="lineChart" viewBox="0 0 560 160" preserveAspectRatio="none"></svg>
-      </div>
-      <div class="chart-x-labels" id="chartLabels"></div>
-    </div>
+      // ── Move the cursor ──
+      document.body.addEventListener('mousemove', onMouseMove);
 
-    <!-- RECENT MISTAKES -->
-    <div class="card card-mistakes">
-      <div class="card-label">Recent Mistakes</div>
-      <div class="mistake-list" id="mistakeList">
-        <div style="font-size:0.65rem;color:var(--accent2)">Loading…</div>
-      </div>
-    </div>
+      for (let i = 0; i < $hoverables.length; i++) {
+        $hoverables[i].addEventListener('mouseenter', onMouseHover);
+        $hoverables[i].addEventListener('mouseleave', onMouseHoverOut);
+        $hoverables[i].addEventListener('mousedown', onMouseDown);
+        $hoverables[i].addEventListener('mouseup', onMouseUp);
+      }
 
-  </div>
-</main>
+      function onMouseMove(e) {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
 
-<script>
-// ================================================================
-//  DATA VARIABLES
-//  In production, replace each block with a fetch() to your Flask
-//  endpoint, e.g.:
-//    const USER_DATA = await fetch('/api/user').then(r => r.json())
-// ================================================================
+        // Small ball snaps instantly
+        smallX = mouseX - 5;
+        smallY = mouseY - 5;
+        $smallBall.style.transform = `translate(${smallX}px, ${smallY}px)`;
 
-// ── /api/user ───────────────────────────────────────────────────
-// Supabase tables: users, tower_progress
-const USER_DATA = {
-  display_name:   "Minh",
-  cefr_level:     "B2 — UPPER INTER.",
-  session_count:  24,
-  streak_current: 14,
-  streak_best:    21,
-  // Array of booleans for the last 14 days — true = completed that day
-  last_14_days: [true,true,true,true,true,true,true,
-                 true,true,true,true,true,true,true],
-  xp_today:    68,
-  xp_goal:     100,
-  xp_total:    2840,
-  words_learned: 347,
-  accuracy:    83,
-  tower: {
-    current_wave:      12,
-    total_waves:       20,
-    castle_hp:         72,
-    towers_built:      3,
-    enemies_defeated:  48
-  }
-};
+        $cursor.hidden = false;
+      }
 
-// ── /api/today-words ────────────────────────────────────────────
-// Supabase table: daily_words
-// words field is the parsed .content from the AI API response
-const WORDS_DATA = {
-  words: [
-    {
-      word: "Bureaucratic",
-      word_form: "adjective",
-      phonetic: "/byʊroʊˈkrætɪk/",
-      vietnamese_translation: "thuộc về hành chính quan liêu",
-      definition: "relating to the habits and practices of people who work in government offices, especially in a slow and inefficient way",
-      example: "The bureaucratic process took several months to complete.",
-      synonyms: ["administrative","official","red-tape"]
-    },
-    {
-      word: "Meritorious",
-      word_form: "adjective",
-      phonetic: "/məˈrɪtɔriəs/",
-      vietnamese_translation: "xứng đáng khen thưởng",
-      definition: "deserving praise or reward because of a notable achievement or service",
-      example: "The meritorious work of the scientists led to a major breakthrough.",
-      synonyms: ["deserving","commendable","notable"]
-    },
-    {
-      word: "Metamorphosis",
-      word_form: "noun",
-      phonetic: "/ˌmɛtəˈmɒrfəsɪs/",
-      vietnamese_translation: "sự biến đổi hoàn toàn",
-      definition: "a complete change in the form of something or someone",
-      example: "The caterpillar's metamorphosis into a butterfly was a wonder to behold.",
-      synonyms: ["transformation","change","mutation"]
-    },
-    {
-      word: "Fastidious",
-      word_form: "adjective",
-      phonetic: "/ˌfæsˈtɪdiəs/",
-      vietnamese_translation: "tỉ mỉ, cầu kỳ",
-      definition: "extremely careful and demanding in one's standards, especially regarding cleanliness or detail",
-      example: "The chef was a fastidious perfectionist, ensuring every dish met precise standards.",
-      synonyms: ["meticulous","fussy","exact"]
-    },
-    {
-      word: "Enigmatic",
-      word_form: "adjective",
-      phonetic: "/ɛˈnɪɡmætɪk/",
-      vietnamese_translation: "bí ẩn, khó hiểu",
-      definition: "difficult to understand because of unclear or ambiguous character",
-      example: "The enigmatic smile of the Mona Lisa has fascinated art lovers for centuries.",
-      synonyms: ["mysterious","cryptic","obscure"]
+      // Big ball lerps toward mouse on every animation frame
+      function animateBigBall() {
+        bigX += (mouseX - 15 - bigX) * 0.15;
+        bigY += (mouseY - 15 - bigY) * 0.15;
+        $bigBall.style.transform = `translate(${bigX}px, ${bigY}px) scale(${bigScale})`;
+        requestAnimationFrame(animateBigBall);
+      }
+      animateBigBall();
+
+      // ── Hover ──
+      function onMouseHover() { animateScale(4); }
+      function onMouseHoverOut() { animateScale(1); }
+
+      // ── Click ──
+      function onMouseDown() { animateScale(3); }
+      function onMouseUp() { animateScale(4); }
+
+      // Lerp bigScale toward target over ~10 frames
+      function animateScale(target) {
+        let start = bigScale;
+        let frame = 0;
+        const total = 10;
+
+        function step() {
+          frame++;
+          bigScale = start + (target - start) * (frame / total);
+          if (frame < total) requestAnimationFrame(step);
+          else bigScale = target;
+        }
+        requestAnimationFrame(step);
+      }
+    });
+    // ================================================================
+    //  SUPABASE CLIENT
+    // ================================================================
+    const SUPABASE_URL = "https://ypktiqorqpytqrfufbpj.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_r3U8mKoht6QE22lYTJ5D0Q_VqnT2bNm";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ================================================================
+    //  LOAD DASHBOARD
+    // ================================================================
+    async function loadDashboard() {
+
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) { window.location.href = '/'; return; }
+      const uid = user.id;
+      const today = new Date().toISOString().slice(0, 10);
+
+      const [profileRes, towerRes, scoresRes, mistakesRes] = await Promise.all([
+
+        supabaseClient
+          .from('profiles')
+          .select('display_name, level, session_count, streak_current, streak_best, last_active_date, loomlars_today, loomlars_goal, loomlars, known_words, accuracy, current_lesson')
+          .eq('id', uid)
+          .single(),
+
+        supabaseClient
+          .from('tower_progress')
+          .select('current_wave, total_waves, castle_hp, towers_built, enemies_defeated, gold')
+          .eq('user_id', uid)
+          .maybeSingle(),
+
+        supabaseClient
+          .from('daily_scores')
+          .select('date, correct_count')
+          .eq('user_id', uid)
+          .gte('date', (() => {
+            const d = new Date(); d.setDate(d.getDate() - 13);
+            return d.toISOString().slice(0, 10);
+          })())
+          .order('date', { ascending: true }),
+
+        supabaseClient
+          .from('quiz_attempts')
+          .select('question_text, user_answer, correct_answer, attempted_at')
+          .eq('user_id', uid)
+          .eq('is_correct', false)
+          .order('attempted_at', { ascending: false })
+          .limit(4),
+      ]);
+
+      const p = profileRes.data || {};
+      const t = towerRes.data || { current_wave: 1, total_waves: 20, castle_hp: 100, towers_built: 0, enemies_defeated: 0, gold: 150 };
+
+      // Streak guard
+      if (p.last_active_date) {
+        const diffDays = Math.round((new Date(today) - new Date(p.last_active_date)) / 86400000);
+        if (diffDays > 1) {
+          p.streak_current = 0;
+          p.loomlars_today = 0;
+          await supabaseClient.from('profiles').update({ streak_current: 0, loomlars_today: 0 }).eq('id', uid);
+        }
+      }
+
+      const displayName = p.display_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+
+      const USER_DATA = {
+        display_name: displayName,
+        level: p.level || 'B2',
+        session_count: p.session_count || 0,
+        streak_current: p.streak_current || 0,
+        streak_best: p.streak_best || 0,
+        loomlars_today: p.loomlars_today || 0,
+        loomlars_goal: p.loomlars_goal || 5,
+        loomlars: p.loomlars || 0,
+        words_learned: (p.known_words || []).length,  // ← use known_words.length
+        accuracy: p.accuracy || 0,
+        last_14_days: (() => {
+          const dateSet = new Set((scoresRes.data || []).map(r => r.date));
+          return Array.from({ length: 14 }, (_, i) => {
+            const d = new Date(); d.setDate(d.getDate() - (13 - i));
+            return dateSet.has(d.toISOString().slice(0, 10));
+          });
+        })(),
+        tower: {
+          current_wave: t.current_wave ?? 1,
+          total_waves: t.total_waves ?? 20,
+          castle_hp: t.castle_hp ?? 100,
+          towers_built: t.towers_built ?? 0,
+          enemies_defeated: t.enemies_defeated ?? 0,
+          gold: t.gold ?? 150,
+        },
+      };
+
+      const dateMap = {};
+      (scoresRes.data || []).forEach(r => { dateMap[r.date] = r.correct_count; });
+      const CHART_DATA = {
+        daily_scores: Array.from({ length: 14 }, (_, i) => {
+          const d = new Date(); d.setDate(d.getDate() - (13 - i));
+          const ds = d.toISOString().slice(0, 10);
+          return { date: ds, correct_count: dateMap[ds] || 0 };
+        }),
+      };
+
+      const MISTAKES_DATA = { mistakes: mistakesRes.data || [] };
+
+      // ── Today's Words ──
+      const wordList = document.getElementById('wordList');
+      wordList.innerHTML = '';
+      if (p.current_lesson) {
+        const words = JSON.parse(p.current_lesson.choices[0].message.content).words;
+        for (let i = 0; i < 5; i++) {
+          const w = words[i];
+          const shortForm = (w.word_form || '')
+            .replace('adjective', 'adj').replace('adverb', 'adv')
+            .replace('noun', 'n').replace('verb', 'v');
+          wordList.innerHTML += `
+        <div class="hoverable word-item">
+          <div>
+            <div class="word-main">${w.word}</div>
+            <div class="word-def">${w.definition}</div>
+          </div>
+          <div class="word-tag">${shortForm}</div>
+        </div>`;
+        }
+      } else {
+        wordList.innerHTML = '<div style="font-size:0.65rem;color:var(--accent2);font-style:italic">No lesson today yet.</div>';
+        window.location.assign("/word");
+      }
+
+      renderDashboard(USER_DATA, CHART_DATA, MISTAKES_DATA);
     }
-  ]
-};
 
-// ── /api/chart ──────────────────────────────────────────────────
-// Supabase table: daily_scores
-const CHART_DATA = {
-  daily_scores: [
-    { date: "2025-03-07", correct_count: 8  },
-    { date: "2025-03-08", correct_count: 14 },
-    { date: "2025-03-09", correct_count: 11 },
-    { date: "2025-03-10", correct_count: 19 },
-    { date: "2025-03-11", correct_count: 7  },
-    { date: "2025-03-12", correct_count: 22 },
-    { date: "2025-03-13", correct_count: 17 },
-    { date: "2025-03-14", correct_count: 25 },
-    { date: "2025-03-15", correct_count: 13 },
-    { date: "2025-03-16", correct_count: 20 },
-    { date: "2025-03-17", correct_count: 28 },
-    { date: "2025-03-18", correct_count: 18 },
-    { date: "2025-03-19", correct_count: 23 },
-    { date: "2025-03-20", correct_count: 15 }
-  ]
-};
+    // ================================================================
+    //  RENDER
+    // ================================================================
+    function renderDashboard(USER_DATA, CHART_DATA, MISTAKES_DATA) {
+      const u = USER_DATA;
+      const t = u.tower;
 
-// ── /api/mistakes ───────────────────────────────────────────────
-// Supabase table: quiz_attempts
-const MISTAKES_DATA = {
-  mistakes: [
-    {
-      question_text:  "Which word means \"open to more than one interpretation\"?",
-      user_answer:    "Ambivalent",
-      correct_answer: "Ambiguous",
-      attempted_at:   "2025-03-20T14:23:00Z"
-    },
-    {
-      question_text:  "Fill in: \"She took a ___ approach to solving the problem.\"",
-      user_answer:    "Pragmatism",
-      correct_answer: "Pragmatic",
-      attempted_at:   "2025-03-20T14:21:00Z"
-    },
-    {
-      question_text:  "Choose the synonym of \"alleviate\":",
-      user_answer:    "Aggravate",
-      correct_answer: "Mitigate",
-      attempted_at:   "2025-03-19T09:10:00Z"
-    },
-    {
-      question_text:  "Which adjective describes someone who never gives up?",
-      user_answer:    "Stubborn",
-      correct_answer: "Tenacious",
-      attempted_at:   "2025-03-18T20:45:00Z"
+      // ── Nav ──
+      document.getElementById('navLevel').textContent = u.level;   // ← level not cefr_level
+      document.getElementById('navName').textContent = u.display_name;
+
+      // ── Greeting ──
+      const hour = new Date().getHours();
+      const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      document.getElementById('greetingMain').innerHTML = `${greet}, <span>${u.display_name}</span>.`;
+
+      // ── Stats bar ──
+      document.getElementById('statStreak').textContent = u.streak_current;
+      document.getElementById('statWords').textContent = u.words_learned.toLocaleString();
+      document.getElementById('statXP').textContent = u.loomlars.toLocaleString();
+      document.getElementById('statAccuracy').textContent = u.accuracy + '%';
+      document.getElementById('statWave').textContent = 'Wave ' + t.current_wave;
+
+      // ── Streak card ──
+      document.getElementById('streakNumber').innerHTML = `${u.streak_current}<sup>d</sup>`;
+      document.getElementById('streakBest').textContent = `Personal best: ${u.streak_best} days`;
+
+      const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+      const dotsEl = document.getElementById('streakDots');
+      dotsEl.innerHTML = '';
+      const todayDow = new Date().getDay();
+      u.last_14_days.forEach((active, i) => {
+        const isToday = i === u.last_14_days.length - 1;
+        const daysAgo = u.last_14_days.length - 1 - i;
+        const dow = ((todayDow - daysAgo) % 7 + 7) % 7;
+        const d = document.createElement('div');
+        d.className = 'streak-dot' + (isToday ? ' today' : active ? ' active' : '');
+        d.textContent = DAY_LABELS[dow];
+        dotsEl.appendChild(d);
+      });
+
+      const xpPct = u.loomlars_goal > 0 ? Math.min(100, Math.round(u.loomlars_today / u.loomlars_goal * 100)) : 0;
+      document.getElementById('xpLabel').textContent = `${u.loomlars_today} / ${u.loomlars_goal}`;
+      document.getElementById('xpFill').style.width = xpPct + '%';
+
+      // ── Tower card ──
+      document.getElementById('waveBadge').textContent = `WAVE ${t.current_wave} / ${t.total_waves}`;
+      document.getElementById('castleHpFill').style.width = t.castle_hp + '%';
+      document.getElementById('towerBuilt').textContent = t.towers_built;
+      document.getElementById('towerEnemies').textContent = t.enemies_defeated;
+      document.getElementById('towerHp').textContent = t.castle_hp + '%';
+      <!-- document.getElementById('towerGold').textContent    = t.gold + 'c'; -->
+      document.getElementById('towerBtn').innerHTML = `<div class="btn-play-icon"></div> Continue — Wave ${t.current_wave}`;
+
+      // ── Chart ──
+      const scores = CHART_DATA.daily_scores;
+      const chartData = scores.map(s => s.correct_count);
+      const chartDates = scores.map(s => new Date(s.date + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+
+      const total = chartData.reduce((a, b) => a + b, 0);
+      document.getElementById('chartTotal').textContent = total;
+
+      const W = 560, H = 160, PAD = { top: 20, right: 8, bottom: 10, left: 28 };
+      const iW = W - PAD.left - PAD.right, iH = H - PAD.top - PAD.bottom;
+      const mx = Math.max(...chartData, 1);
+      const xS = i => PAD.left + (i / (chartData.length - 1)) * iW;
+      const yS = v => PAD.top + iH - (v / mx) * iH;
+      const svg = document.getElementById('lineChart');
+      svg.innerHTML = '';
+
+      [0, 0.5, 1].forEach(frac => {
+        const y = PAD.top + iH - frac * iH;
+        const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        ln.setAttribute('x1', PAD.left); ln.setAttribute('x2', W - PAD.right);
+        ln.setAttribute('y1', y); ln.setAttribute('y2', y);
+        ln.setAttribute('stroke', 'rgba(34,34,59,0.07)'); ln.setAttribute('stroke-width', '1');
+        svg.appendChild(ln);
+        const tx = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        tx.setAttribute('x', PAD.left - 4); tx.setAttribute('y', y + 3.5);
+        tx.setAttribute('text-anchor', 'end'); tx.setAttribute('font-size', '8');
+        tx.setAttribute('fill', 'rgba(34,34,59,0.35)');
+        tx.setAttribute('font-family', 'Roboto Mono,monospace');
+        tx.textContent = total === 0 ? '' : Math.round(frac * mx);
+        svg.appendChild(tx);
+      });
+
+      const areaPts = chartData.map((v, i) => `${xS(i)},${yS(v)}`).join(' ');
+      const area = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      area.setAttribute('points', `${xS(0)},${yS(0)} ${areaPts} ${xS(chartData.length - 1)},${yS(0)}`);
+      area.setAttribute('fill', 'rgba(34,34,59,0.06)');
+      svg.appendChild(area);
+
+      const dStr = chartData.map((v, i) => `${i === 0 ? 'M' : 'L'}${xS(i)},${yS(v)}`).join(' ');
+      const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      pathEl.setAttribute('d', dStr); pathEl.setAttribute('fill', 'none');
+      pathEl.setAttribute('stroke', 'rgba(34,34,59,0.85)'); pathEl.setAttribute('stroke-width', '1.8');
+      pathEl.setAttribute('stroke-linejoin', 'round'); pathEl.setAttribute('stroke-linecap', 'round');
+      pathEl.setAttribute('stroke-dasharray', 600); pathEl.setAttribute('stroke-dashoffset', 600);
+      pathEl.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1) 0.3s';
+      svg.appendChild(pathEl);
+      setTimeout(() => pathEl.setAttribute('stroke-dashoffset', '0'), 50);
+
+      chartData.forEach((v, i) => {
+        const isToday = i === chartData.length - 1;
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', xS(i)); c.setAttribute('cy', yS(v));
+        c.setAttribute('r', isToday ? '5' : '3.5');
+        c.setAttribute('fill', isToday ? 'rgba(34,34,59,1)' : 'rgba(242,233,228,1)');
+        c.setAttribute('stroke', 'rgba(34,34,59,0.85)');
+        c.setAttribute('stroke-width', isToday ? '0' : '1.5');
+        c.style.opacity = '0'; c.style.transition = `opacity 0.3s ${0.3 + i * 0.05}s`;
+        svg.appendChild(c);
+        setTimeout(() => c.style.opacity = '1', 50);
+        if (isToday && v > 0) {
+          const lb = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          lb.setAttribute('x', xS(i)); lb.setAttribute('y', yS(v) - 10);
+          lb.setAttribute('text-anchor', 'middle'); lb.setAttribute('font-size', '9');
+          lb.setAttribute('font-weight', '600'); lb.setAttribute('fill', 'rgba(34,34,59,0.9)');
+          lb.setAttribute('font-family', 'Roboto Mono,monospace');
+          lb.textContent = v; svg.appendChild(lb);
+        }
+      });
+
+      const labelsEl = document.getElementById('chartLabels');
+      labelsEl.innerHTML = ''; labelsEl.style.cssText = 'position:relative;height:16px;';
+      const step = Math.ceil(chartData.length / 7);
+      chartData.forEach((_, i) => {
+        if (i % step !== 0 && i !== chartData.length - 1) return;
+        const sp = document.createElement('span');
+        sp.className = 'chart-x-label'; sp.textContent = chartDates[i];
+        sp.style.cssText = `position:absolute;left:${((xS(i) - PAD.left) / iW * 100)}%;transform:translateX(-50%)`;
+        labelsEl.appendChild(sp);
+      });
+
+      // ── Recent Mistakes ──
+      const mistakeList = document.getElementById('mistakeList');
+      mistakeList.innerHTML = '';
+      if (!MISTAKES_DATA.mistakes?.length) {
+        mistakeList.innerHTML = '<div style="font-size:0.65rem;color:var(--accent2);font-style:italic">No mistakes yet — great work!</div>';
+      } else {
+        MISTAKES_DATA.mistakes.forEach(m => {
+          mistakeList.innerHTML += `
+        <div class="mistake-item">
+          <div>
+            <div class="mistake-q">${m.question_text}</div>
+            <div class="mistake-a">✕ You answered: <strong>${m.user_answer}</strong> — correct: <strong>${m.correct_answer}</strong></div>
+          </div>
+        </div>`;
+        });
+      }
     }
-  ]
-};
 
-// ================================================================
-//  RENDER
-// ================================================================
-(function () {
-  const u = USER_DATA;
-  const t = u.tower;
-
-  // ── Nav ──
-  document.getElementById('navDate').textContent =
-    new Date().toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
-  document.getElementById('navLevel').textContent = u.cefr_level;
-  document.getElementById('navName').textContent  = u.display_name + ' N.';
-
-  // ── Greeting ──
-  const hour  = new Date().getHours();
-  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('greetingMain').innerHTML =
-    `${greet}, <span>${u.display_name}</span>.`;
-  document.getElementById('sessionLabel').textContent =
-    `// session_${String(u.session_count).padStart(3,'0')}`;
-
-  // ── Stats bar ──
-  document.getElementById('statStreak').textContent   = u.streak_current;
-  document.getElementById('statWords').textContent    = u.words_learned.toLocaleString();
-  document.getElementById('statXP').textContent       = u.xp_total.toLocaleString();
-  document.getElementById('statAccuracy').textContent = u.accuracy + '%';
-  document.getElementById('statWave').textContent     = 'Wave ' + t.current_wave;
-
-  // ── Streak card ──
-  document.getElementById('streakNumber').innerHTML =
-    `${u.streak_current}<sup>d</sup>`;
-  document.getElementById('streakBest').textContent =
-    `Personal best: ${u.streak_best} days`;
-
-  // Build 14-day dots. Work backwards from today.
-  const DAY_LABELS = ['S','M','T','W','T','F','S']; // 0=Sun
-  const dotsEl     = document.getElementById('streakDots');
-  const todayDow   = new Date().getDay();
-
-  u.last_14_days.forEach((active, i) => {
-    const isToday  = i === u.last_14_days.length - 1;
-    const daysAgo  = u.last_14_days.length - 1 - i;
-    const dow      = ((todayDow - daysAgo) % 7 + 7) % 7;
-    const d        = document.createElement('div');
-    d.className    = 'streak-dot' + (isToday ? ' today' : active ? ' active' : '');
-    d.textContent  = DAY_LABELS[dow];
-    dotsEl.appendChild(d);
-  });
-
-  const xpPct = Math.min(100, Math.round(u.xp_today / u.xp_goal * 100));
-  document.getElementById('xpLabel').textContent = `${u.xp_today} / ${u.xp_goal}`;
-  document.getElementById('xpFill').style.width  = xpPct + '%';
-
-  // ── Tower card ──
-  document.getElementById('waveBadge').textContent     = `WAVE ${t.current_wave} / ${t.total_waves}`;
-  document.getElementById('castleHpFill').style.width  = t.castle_hp + '%';
-  document.getElementById('towerBuilt').textContent    = t.towers_built;
-  document.getElementById('towerEnemies').textContent  = t.enemies_defeated;
-  document.getElementById('towerHp').textContent       = t.castle_hp + '%';
-  document.getElementById('towerBtn').innerHTML =
-    `<div class="btn-play-icon"></div> Continue — Wave ${t.current_wave}`;
-
-  // ── Today's Words ──
-  const wordList = document.getElementById('wordList');
-  wordList.innerHTML = '';
-  WORDS_DATA.words.forEach(w => {
-    const shortForm = w.word_form
-      .replace('adjective','adj')
-      .replace('adverb','adv')
-      .replace('noun','n')
-      .replace('verb','v');
-    wordList.innerHTML += `
-      <div class="word-item">
-        <div>
-          <div class="word-main">${w.word}</div>
-          <div class="word-def">${w.vietnamese_translation}</div>
-        </div>
-        <div class="word-tag">${shortForm}</div>
-      </div>`;
-  });
-
-  // ── Chart ──
-  const scores     = CHART_DATA.daily_scores;
-  const chartData  = scores.map(s => s.correct_count);
-  const chartDates = scores.map(s => {
-    const d = new Date(s.date);
-    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
-  });
-
-  document.getElementById('chartTotal').textContent =
-    chartData.reduce((a,b) => a+b, 0);
-
-  const W=560, H=160, PAD={top:20,right:8,bottom:10,left:28};
-  const iW = W-PAD.left-PAD.right, iH = H-PAD.top-PAD.bottom;
-  const mx = Math.max(...chartData);
-  const xS = i => PAD.left + (i/(chartData.length-1))*iW;
-  const yS = v => PAD.top  + iH - (v/mx)*iH;
-  const svg = document.getElementById('lineChart');
-
-  // Grid lines
-  [0, 0.5, 1].forEach(frac => {
-    const y   = PAD.top + iH - frac*iH;
-    const val = Math.round(frac*mx);
-    const ln  = document.createElementNS('http://www.w3.org/2000/svg','line');
-    ln.setAttribute('x1',PAD.left); ln.setAttribute('x2',W-PAD.right);
-    ln.setAttribute('y1',y);        ln.setAttribute('y2',y);
-    ln.setAttribute('stroke','rgba(34,34,59,0.07)'); ln.setAttribute('stroke-width','1');
-    svg.appendChild(ln);
-    const tx = document.createElementNS('http://www.w3.org/2000/svg','text');
-    tx.setAttribute('x',PAD.left-4); tx.setAttribute('y',y+3.5);
-    tx.setAttribute('text-anchor','end'); tx.setAttribute('font-size','8');
-    tx.setAttribute('fill','rgba(34,34,59,0.35)');
-    tx.setAttribute('font-family','Roboto Mono,monospace');
-    tx.textContent = val; svg.appendChild(tx);
-  });
-
-  // Area fill
-  const areaPts = chartData.map((v,i)=>`${xS(i)},${yS(v)}`).join(' ');
-  const area    = document.createElementNS('http://www.w3.org/2000/svg','polygon');
-  area.setAttribute('points',
-    `${xS(0)},${yS(0)} ${areaPts} ${xS(chartData.length-1)},${yS(0)}`);
-  area.setAttribute('fill','rgba(34,34,59,0.06)');
-  svg.appendChild(area);
-
-  // Line
-  const dStr = chartData.map((v,i)=>`${i===0?'M':'L'}${xS(i)},${yS(v)}`).join(' ');
-  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-  path.setAttribute('d',dStr);
-  path.setAttribute('fill','none');
-  path.setAttribute('stroke','rgba(34,34,59,0.85)');
-  path.setAttribute('stroke-width','1.8');
-  path.setAttribute('stroke-linejoin','round');
-  path.setAttribute('stroke-linecap','round');
-  const len = 600;
-  path.setAttribute('stroke-dasharray',len);
-  path.setAttribute('stroke-dashoffset',len);
-  path.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1) 0.3s';
-  svg.appendChild(path);
-  setTimeout(() => path.setAttribute('stroke-dashoffset','0'), 50);
-
-  // Dots
-  chartData.forEach((v,i) => {
-    const isToday = i === chartData.length-1;
-    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    c.setAttribute('cx',xS(i)); c.setAttribute('cy',yS(v));
-    c.setAttribute('r', isToday ? '5' : '3.5');
-    c.setAttribute('fill', isToday ? 'rgba(34,34,59,1)' : 'rgba(242,233,228,1)');
-    c.setAttribute('stroke','rgba(34,34,59,0.85)');
-    c.setAttribute('stroke-width', isToday ? '0' : '1.5');
-    c.style.opacity = '0';
-    c.style.transition = `opacity 0.3s ${0.3+i*0.05}s`;
-    svg.appendChild(c);
-    setTimeout(() => c.style.opacity = '1', 50);
-    if (isToday) {
-      const lb = document.createElementNS('http://www.w3.org/2000/svg','text');
-      lb.setAttribute('x',xS(i)); lb.setAttribute('y',yS(v)-10);
-      lb.setAttribute('text-anchor','middle'); lb.setAttribute('font-size','9');
-      lb.setAttribute('font-weight','600'); lb.setAttribute('fill','rgba(34,34,59,0.9)');
-      lb.setAttribute('font-family','Roboto Mono,monospace');
-      lb.textContent = v; svg.appendChild(lb);
+    async function restoreSession() {
+      try {
+        const res = await fetch('/api/session');
+        if (!res.ok) return;
+        const { access_token, refresh_token } = await res.json();
+        await supabaseClient.auth.setSession({ access_token, refresh_token });
+      } catch (err) {
+        console.error("Failed to restore session:", err);
+      }
     }
-  });
 
-  // X labels
-  const labelsEl = document.getElementById('chartLabels');
-  const step     = Math.ceil(chartData.length / 7);
-  labelsEl.style.cssText = 'position:relative;height:16px;';
-  chartData.forEach((_,i) => {
-    if (i % step !== 0 && i !== chartData.length-1) return;
-    const sp = document.createElement('span');
-    sp.className  = 'chart-x-label';
-    sp.textContent = chartDates[i];
-    sp.style.cssText = `position:absolute;left:${((xS(i)-PAD.left)/iW*100)}%;transform:translateX(-50%)`;
-    labelsEl.appendChild(sp);
-  });
+    restoreSession().then(() => loadDashboard());
 
-  // ── Recent Mistakes ──
-  const mistakeList = document.getElementById('mistakeList');
-  mistakeList.innerHTML = '';
-  MISTAKES_DATA.mistakes.forEach(m => {
-    mistakeList.innerHTML += `
-      <div class="mistake-item">
-        <div>
-          <div class="mistake-q">${m.question_text}</div>
-          <div class="mistake-a">✕ You answered: <strong>${m.user_answer}</strong> — correct: <strong>${m.correct_answer}</strong></div>
-        </div>
-      </div>`;
-  });
 
-})();
+    // ================================================================
+    //  3D TILT — toward mouse, intensive
+    // ================================================================
+    document.querySelectorAll('.card').forEach(card => {
+      const MAX_TILT = 18;
+      const LERP = 0.12;
+      let tRx = 0, tRy = 0, cRx = 0, cRy = 0, rafId = null, hovered = false;
 
-// ================================================================
-//  3D TILT — toward mouse, intensive
-// ================================================================
-document.querySelectorAll('.card').forEach(card => {
-  const MAX_TILT = 18;
-  const LERP     = 0.12;
-  let tRx=0, tRy=0, cRx=0, cRy=0, rafId=null, hovered=false;
+      const lerp = (a, b, t) => a + (b - a) * t;
 
-  const lerp = (a,b,t) => a + (b-a)*t;
+      function animate() {
+        cRx = lerp(cRx, tRx, LERP);
+        cRy = lerp(cRy, tRy, LERP);
+        card.style.transform =
+          `perspective(700px) rotateX(${cRx}deg) rotateY(${cRy}deg) scale3d(1.02,1.02,1.02)`;
+        card.style.boxShadow =
+          'rgba(50,50,93,0.25) 0px 30px 60px -12px, rgba(0,0,0,0.3) 0px 18px 36px -18px';
+        const still = Math.abs(cRx - tRx) < 0.01 && Math.abs(cRy - tRy) < 0.01;
+        rafId = (hovered || !still) ? requestAnimationFrame(animate) : null;
+      }
 
-  function animate() {
-    cRx = lerp(cRx, tRx, LERP);
-    cRy = lerp(cRy, tRy, LERP);
-    card.style.transform =
-      `perspective(700px) rotateX(${cRx}deg) rotateY(${cRy}deg) scale3d(1.02,1.02,1.02)`;
-    card.style.boxShadow =
-      'rgba(50,50,93,0.25) 0px 30px 60px -12px, rgba(0,0,0,0.3) 0px 18px 36px -18px';
-    const still = Math.abs(cRx-tRx)<0.01 && Math.abs(cRy-tRy)<0.01;
-    rafId = (hovered || !still) ? requestAnimationFrame(animate) : null;
-  }
+      card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+        const dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+        tRx = -dy * MAX_TILT;
+        tRy = dx * MAX_TILT;
+        if (!rafId) { hovered = true; rafId = requestAnimationFrame(animate); }
+      });
 
-  card.addEventListener('mousemove', e => {
-    const r  = card.getBoundingClientRect();
-    const dx = (e.clientX - (r.left + r.width/2))  / (r.width/2);
-    const dy = (e.clientY - (r.top  + r.height/2)) / (r.height/2);
-    tRx = -dy * MAX_TILT;
-    tRy =  dx * MAX_TILT;
-    if (!rafId) { hovered=true; rafId=requestAnimationFrame(animate); }
-  });
-
-  card.addEventListener('mouseleave', () => {
-    hovered=false; tRx=0; tRy=0;
-    if (!rafId) rafId = requestAnimationFrame(animate);
-  });
-});
-</script>
+      card.addEventListener('mouseleave', () => {
+        hovered = false; tRx = 0; tRy = 0;
+        if (!rafId) rafId = requestAnimationFrame(animate);
+      });
+    });
+  </script>
 </body>
+
 </html>

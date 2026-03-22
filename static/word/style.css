@@ -290,6 +290,10 @@ q {
     background-color: var(--light) !important;
 }
 
+.modal-overlay * {
+    cursor: auto;
+}
+
 @keyframes spin {
     from {
         opacity: 0;
