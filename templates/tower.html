@@ -6,10 +6,7 @@
     <title>loom</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
-    
+        
     <!-- Cursor -->
     <link rel="stylesheet" href="{{ url_for('static', filename='.module/cursor/style.css') }}">
     <script src="{{ url_for('static', filename='.module/cursor/script.js') }}"></script>
@@ -226,15 +223,30 @@
         </div>
     </div>
 
+    <div id="sfx-library" style="display: none;">
+        <audio id="sfx-correct" src="{{ url_for('static', filename='.module/sfx/correct.mp3') }}"
+            preload="auto"></audio>
+        <audio id="sfx-incorrect" src="{{ url_for('static', filename='.module/sfx/incorrect.mp3') }}"
+            preload="auto"></audio>
+    </div>
+
     <script>
     // ════════════════════════════════════════════════════════════════════
     //  CONFIG
     // ════════════════════════════════════════════════════════════════════
-    const CEREBRAS_API_KEY  = "csk-3d9d3kyd8xwxpxx95cvrkncmtjmyxnxyn6extedwkfedpe8e";
     const SUPABASE_URL      = "https://ypktiqorqpytqrfufbpj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_r3U8mKoht6QE22lYTJ5D0Q_VqnT2bNm";
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ── Play SFX ─────────────────────────────────────────────────────
+    function playSFX(soundId) {
+    const sound = document.getElementById(`sfx-${soundId}`);
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("Audio playback blocked until user interaction."));
+        }
+    }
 
     // ════════════════════════════════════════════════════════════════════
     //  COSMETICS — loaded from Supabase profiles
@@ -924,17 +936,26 @@
     }
 
     async function generateQuizFromCerebras(words) {
-        const r=await fetch('https://api.cerebras.ai/v1/chat/completions',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':`Bearer ${CEREBRAS_API_KEY}`},
-            body:JSON.stringify({
-                model:'qwen-3-235b-a22b-instruct-2507',
-                messages:[{role:'user',content:`You are a vocabulary quiz generator. Given this list of English words the student has recently learned: [${words.join(', ')}]\n\nPick ONE word from the list and create a multiple-choice question that tests whether the student understands its meaning, usage, or a synonym/antonym.\n\nRules:\n- The question must be clearly about the chosen word without giving away the answer\n- Provide exactly 4 options (A–D), only one of which is correct\n- Make the wrong options plausible but clearly incorrect to someone who knows the word\n- Keep questions concise and appropriate for an intermediate English learner\n\nRespond ONLY with a valid JSON object in this exact format, no markdown, no extra text:\n{\n  "word": "the word being tested",\n  "question": "the question text",\n  "options": ["option A", "option B", "option C", "option D"],\n  "correctIndex": 0,\n  "reward": 250\n}`}],
-                temperature:0.7, response_format:{type:'json_object'}
-            })
-        });
-        if(!r.ok) throw new Error(`Cerebras ${r.status}`);
-        return JSON.parse((await r.json()).choices[0].message.content);
+        try {
+            const response = await fetch('/api/generate-quiz', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ words: words })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Server Error: ${response.status}`);
+            }
+
+            const quiz = await response.json();
+            return quiz;
+        } catch (error) {
+            console.error("Failed to generate quiz:", error);
+            throw error;
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -1128,14 +1149,17 @@
                     btn.onclick = () => {
                         oc.querySelectorAll('button').forEach(b => b.disabled = true);
                         if (idx === quiz.correctIndex) {
+                            playSFX("correct")
                             btn.style.background = '#4CAF50'; btn.style.color = '#fff'; btn.style.borderColor = '#4CAF50';
                             gold += quiz.reward; updateUI();
                             setTimeout(runNext, 900);
                         } else {
+                            playSFX("incorrect")
                             btn.style.background = '#C1121F'; btn.style.color = '#fff'; btn.style.borderColor = '#C1121F';
                             oc.querySelectorAll('button')[quiz.correctIndex].style.background = '#4CAF50';
                             oc.querySelectorAll('button')[quiz.correctIndex].style.color = '#fff';
                             oc.querySelectorAll('button')[quiz.correctIndex].style.borderColor = '#4CAF50';
+                            
                             setTimeout(runNext, 1400);
                         }
                     };

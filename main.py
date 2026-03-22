@@ -7,14 +7,14 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 
 load_dotenv()
-app = Flask(__name__)
-app.secret_key = os.getenv("SUPABASE_KEY")
 
 API_KEY      = os.getenv("API_KEY")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_URL = "https://ypktiqorqpytqrfufbpj.supabase.co"
+SUPABASE_KEY = "sb_publishable_r3U8mKoht6QE22lYTJ5D0Q_VqnT2bNm"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+app = Flask(__name__)
+app.secret_key = API_KEY
 
 # ════════════════════════════════════════════════════════
 #  AUTH HELPER
@@ -485,6 +485,43 @@ def get_user():
         },
     })
 
+@app.route('/api/generate-quiz', methods=['POST'])
+def generate_quiz():
+    data = request.json
+    words = data.get('words', [])
+    
+    if not words:
+        return jsonify({"error": "No words provided"}), 400
+
+    payload = {
+        "model": "qwen-3-235b-a22b-instruct-2507",
+        "messages": [
+            {
+                "role": "user",
+                "content": f"You are a vocabulary quiz generator. Given this list of English words: [{', '.join(words)}]\n\nPick ONE word and create a multiple-choice question. Provide exactly 4 options (A–D). Respond ONLY with a valid JSON object:\n{{\n  \"word\": \"...\",\n  \"question\": \"...\",\n  \"options\": [\"...\", \"...\", \"...\", \"...\"],\n  \"correctIndex\": 0,\n  \"reward\": 250\n}}"
+            }
+        ],
+        "temperature": 0.7,
+        "response_format": {"type": "json_object"}
+    }
+
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.post("https://api.cerebras.ai/v1/chat/completions", json=payload, headers=headers)
+        response.raise_for_status()
+        
+        # Extract the nested JSON string from Cerebras and parse it
+        result = response.json()
+        quiz_data = result['choices'][0]['message']['content']
+        
+        return quiz_data, 200, {'Content-Type': 'application/json'}
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/streak/checkin', methods=['POST'])
 @login_required_api

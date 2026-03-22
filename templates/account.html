@@ -6,15 +6,16 @@
     <title>loom - account</title>
     <link rel="icon" href="{{ url_for('static', filename='.module/favicon.ico') }}" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='.module/cursor/style.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js"></script>
 
     <style>
+        * {
+            user-select: none !important;
+            cursor: none !important;
+        }
         body {
             background-color: #F2E9E4;
             color: #22223B;
@@ -56,10 +57,10 @@
         <header>
             <div class="flex justify-between items-end border-b-2 border-[#22223B] pb-4">
                 <a href="/dashboard">
-                    <button class="text-sm font-bold uppercase hover:line-through transition-all focus:outline-none">[Back]</button>
+                    <button class="hoverable text-sm font-bold uppercase hover:line-through transition-all focus:outline-none">[Back]</button>
                 </a>
-                <h1 class="text-2xl font-bold uppercase tracking-tighter">Account</h1>
-                <button id="saveBtn" class="text-sm font-bold uppercase hover:line-through transition-all focus:outline-none">
+                <h1 class="text-2xl font-bold uppercase">Account</h1>
+                <button id="saveBtn" class="hoverable text-sm font-bold uppercase hover:line-through transition-all focus:outline-none">
                     [Save]
                 </button>
             </div>
@@ -124,10 +125,10 @@
 
         <!-- Footer -->
         <footer class="pt-12 border-t border-[#22223B]/10 flex flex-col items-start gap-4">
-            <button id="logoutBtn" class="text-xs font-bold uppercase flex items-center gap-2 hover:line-through focus:outline-none">
+            <button id="logoutBtn" class="hoverable text-xs font-bold uppercase flex items-center gap-2 hover:line-through focus:outline-none">
                 <i data-lucide="log-out" class="w-4 h-4"></i> Log Out
             </button>
-            <button id="deleteBtn" class="text-xs font-bold uppercase flex items-center gap-2 text-red-700 hover:line-through focus:outline-none">
+            <button id="deleteBtn" class="hoverable text-xs font-bold uppercase flex items-center gap-2 text-red-700 hover:line-through focus:outline-none">
                 <i data-lucide="trash-2" class="w-4 h-4"></i> Delete Account
             </button>
         </footer>
