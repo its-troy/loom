@@ -204,7 +204,7 @@ def check_sentence():
     }}"""
 
     payload = {
-        "model": "llama3.1-8b",
+        "model": "qwen-3-235b-a22b-instruct-2507",
         "messages": [{"role": "system", "content": system_prompt}],
         "temperature": 0.2,
         "response_format": {"type": "json_object"}
@@ -282,7 +282,7 @@ def generate_words():
     }
 
     payload = {
-        "model": "llama3.1-8b",
+        "model": "qwen-3-235b-a22b-instruct-2507",
         "messages": [{"role": "user", "content": prompt}],
         "response_format": {"type": "json_object"}
     }
@@ -376,7 +376,7 @@ def generate_custom_words():
     }
 
     payload = {
-        "model": "llama3.1-8b",
+        "model": "qwen-3-235b-a22b-instruct-2507",
         "messages": [{"role": "user", "content": prompt}],
         "response_format": {"type": "json_object"}
     }

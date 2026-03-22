@@ -928,7 +928,7 @@
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':`Bearer ${CEREBRAS_API_KEY}`},
             body:JSON.stringify({
-                model:'llama3.1-8b',
+                model:'qwen-3-235b-a22b-instruct-2507',
                 messages:[{role:'user',content:`You are a vocabulary quiz generator. Given this list of English words the student has recently learned: [${words.join(', ')}]\n\nPick ONE word from the list and create a multiple-choice question that tests whether the student understands its meaning, usage, or a synonym/antonym.\n\nRules:\n- The question must be clearly about the chosen word without giving away the answer\n- Provide exactly 4 options (A–D), only one of which is correct\n- Make the wrong options plausible but clearly incorrect to someone who knows the word\n- Keep questions concise and appropriate for an intermediate English learner\n\nRespond ONLY with a valid JSON object in this exact format, no markdown, no extra text:\n{\n  "word": "the word being tested",\n  "question": "the question text",\n  "options": ["option A", "option B", "option C", "option D"],\n  "correctIndex": 0,\n  "reward": 250\n}`}],
                 temperature:0.7, response_format:{type:'json_object'}
             })
