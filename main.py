@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from flask import Flask, render_template, redirect, request, session, url_for, jsonify
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
@@ -14,6 +15,7 @@ SUPABASE_KEY = "sb_publishable_r3U8mKoht6QE22lYTJ5D0Q_VqnT2bNm"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = API_KEY
 
 # ════════════════════════════════════════════════════════
