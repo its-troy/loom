@@ -1,23 +1,62 @@
-### 🧠 The Learning Engine (AI-Driven)
-* **Adaptive Onboarding:** Users input their skill level (CEFR: A1–C2) and interests (e.g., Tech, Business, Travel) to ensure the vocabulary is relevant.
-* **Smart Word Generation:** AI provides a "Complete Word Profile" including:
-    * Clear definitions and native language translations.
-    * **Word Families** (Noun, Verb, Adjective forms).
-    * Synonyms and Antonyms.
-    * **Contextual Examples** tailored to the user’s personal interests.
-* **The "Skip" Logic:** A one-click option for words the user already knows, which hides them from future quizzes and adjusts the difficulty upward.
-* **High-Fidelity TTS:** Multi-accent Text-to-Speech (US/UK) so the user hears natural pronunciation immediately.
+# [![loom - vocab made simple](https://i.ibb.co/jZhtNDSg/loom.png)](https://loom-1elr.onrender.com/)
 
-### 📝 The "Quiz Sandwich" (Retention Strategy)
-To combat the "Forgetting Curve," the platform uses three distinct quiz layers:
-* **Immediate Micro-Check:** A low-effort task (like matching a synonym) 60 seconds after seeing a new word to "encode" it into working memory.
-* **The Login Quiz ("Yesterday’s Echo"):** A fast-paced review of the previous day's words (and a few "Legacy Wildcards" from weeks ago) to move them into short-term memory.
-* **The Weekly Gauntlet:** A high-effort session focusing on **Production** rather than just recognition:
-    * **Drag-and-Drop:** Sentence structure and word family placement.
-    * **Sentence Construction:** Writing original sentences validated by AI.
-    * **Voice-to-Text:** Speaking the word out loud to check pronunciation and active recall.
+**Loom** is an AI-powered vocabulary engine designed to bridge the gap between passive memorization and active language production. Built for students tackling high-stakes exams (like the 10th-grade entrance exams), Loom turns the "chore" of studying into the "fuel" for a strategic Tower Defense game.
 
-### ⚖️ Logic & Gamification
-* **Weighted Spaced Repetition (SRS):** An algorithm that prioritizes difficult words and pushes "Mastered" words further into the future.
-* **Variable Intensity:** Keeping daily reviews short (under 2 minutes) to prevent "quiz fatigue" while making weekly milestones feel significant.
-* **Active Feedback:** AI doesn't just say "Wrong"—it explains *why* a sentence was grammatically incorrect or how a pronunciation was slightly off.
+## 🚀 The Core Loop
+Loom utilizes a research-backed, multi-tiered learning cycle to fight the "Forgetting Curve":
+1. **AI Word Profiles:** Qwen 3 generates context-rich definitions, synonyms, and examples tailored to your skill level.
+2. **TTS Micro-Checks:** Use Text-to-Speech auditory cues to verify spelling and sentence structure in real-time.
+3. **The Daily Quiz:** A high-stakes 5-question gauntlet to test your retention and earn premium currency.
+4. **Tower Defense:** Use your hard-earned knowledge to buy defenses, upgrade towers, and survive waves of enemies.
+
+## ✨ Key Features
+* **Custom Syllabus Integration:** Students can input their own vocabulary lists from school to ensure they are studying exactly what they need for their next test.
+* **Dual-Currency Economy:**
+    + Loomlars: Earned via the Daily Quiz; used for cosmetic upgrades in the Shop.
+    + Credits: Earned via gameplay and quick-fire questions; used to build and upgrade towers.
+* **Active Feedback:** Real-time AI validation of your grammar and word usage.
+* **Personalized Dashboard:** Track your streaks, total words mastered, and review "Recent Mistakes."
+
+## 🛠️ Tech Stack
+* **LLM:** Qwen 3 235B (via Cerebras) for high-fidelity JSON generation and semantic grading.
+* **Backend:** Flask (Python)
+* **Database:** Supabase (PostgreSQL) for user progress and currency tracking.
+* **Frontend:** HTML5 Canvas, JavaScript, and Tailwind CSS.
+
+---
+
+## ⚙️ Installation & Build
+
+Loom uses [uv](https://github.com/astral-sh/uv) for extremely fast Python package and project management.
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-username/loom.git
+cd loom
+```
+
+### 2. Environment Configuration
+To power the AI engine, you must provide a valid API key from [Cerebras](https://www.cerebras.ai/).
+
+1. Create a new file in the root directory named `.env`.
+2. Open the file and add your Cerebras API key:
+
+```env
+API_KEY=your_cerebras_api_key_here
+```
+
+### 3. Run the Application
+You do not need to manually manage a virtual environment or install a `requirements.txt`. Simply run:
+
+```bash
+uv run main.py
+```
+
+Navigate to `http://localhost:5000` in your browser to start weaving your knowledge!
+
+---
+
+## 🏆 Hackathon Recognition
+Loom was developed in 36 hours for **[LotusHack 2026](https://www.lotushack.org/)**.
+
+In a highly competitive field of **220 teams**, Loom placed **55th overall (Top 25%)**. The project was recognized by judges for its technical ambition in integrating high-parameter LLMs with a functional, dual-currency gaming economy to solve real-world educational challenges.
