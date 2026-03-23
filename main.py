@@ -99,10 +99,12 @@ def tower():
 
 @app.route('/auth/google')
 def auth_google():
+    callback_url = url_for('auth_callback', _external=True)
+    
     res = supabase.auth.sign_in_with_oauth({
         "provider": "google",
         "options": {
-            "redirect_to": "http://127.0.0.1:5000/auth/callback",
+            "redirect_to": callback_url,
             "flow_type": "pkce"
         }
     })
