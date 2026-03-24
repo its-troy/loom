@@ -2,20 +2,19 @@ import os
 import random
 import requests
 from datetime import date, datetime, timedelta
-from flask import Flask, render_template, redirect, request, session, url_for, jsonify
+from flask import Flask, render_template, redirect, request, session, jsonify
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
 API_KEY      = os.getenv("API_KEY")
+BASE_URL     = os.getenv('BASE_URL')
 SUPABASE_URL = "https://ypktiqorqpytqrfufbpj.supabase.co"
 SUPABASE_KEY = "sb_publishable_r3U8mKoht6QE22lYTJ5D0Q_VqnT2bNm"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = API_KEY
 
 # ════════════════════════════════════════════════════════
@@ -39,7 +38,8 @@ def login_required_page(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not get_uid():
-            return redirect(url_for('index'))
+            base_url = BASE_URL or request.host_url.rstrip('/')
+            return redirect(f"{base_url}")
         return f(*args, **kwargs)
     return decorated
 
@@ -66,9 +66,10 @@ def dashboard():
 
         if response.data:
             if response.data.get("lessonCompleted") is False:
-                return redirect(url_for('word'))
+                base_url = BASE_URL or request.host_url.rstrip('/')
+                return redirect(f"{base_url}/word")
         else:
-            return redirect(url_for('register_page'))
+            return redirect(f"{base_url}/register")
 
     except Exception as e:
         print(f"Error checking lesson status: {e}")
@@ -101,7 +102,8 @@ def tower():
 
 @app.route('/auth/google')
 def auth_google():
-    callback_url = url_for('auth_callback', _external=True)
+    base_url = BASE_URL or request.host_url.rstrip('/')
+    callback_url = f"{base_url}/auth/callback"
     
     res = supabase.auth.sign_in_with_oauth({
         "provider": "google",
@@ -115,6 +117,7 @@ def auth_google():
 
 @app.route('/auth/callback')
 def auth_callback():
+    base_url = BASE_URL or request.host_url.rstrip('/')
     code = request.args.get("code")
     if not code:
         return "Login failed", 400
@@ -130,13 +133,13 @@ def auth_callback():
         response = supabase.table("profiles").select("*").eq("id", user_id).maybe_single().execute()
 
         if not response.data:
-            return redirect(url_for('register_page'))
+            return redirect(f"{base_url}/register")
 
-        return redirect(url_for('dashboard'))
+        return redirect(f"{base_url}/dashboard")
 
     except Exception as e:
         print(f"Error fetching profile: {e}")
-        return redirect(url_for('register_page'))
+        return redirect(f"{base_url}/register")
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -150,7 +153,9 @@ def register_page():
             "level":     skill_level,
             "interests": user_interests
         }).execute()
-        return redirect(url_for('dashboard'))
+        
+        base_url = BASE_URL or request.host_url.rstrip('/')
+        return redirect(f"{base_url}/dashboard")
 
     return render_template("register.html")
 
@@ -251,8 +256,7 @@ def generate_words():
     - Exclusion: Do NOT use the words: {exclude_words}
     - Phonetics: Use the International Phonetic Alphabet (IPA).
     - Context: The example sentence should be sophisticated enough for a {level} learner.
-    - The Words: Select words that are high-frequency, general, and essential for daily life (e.g., efficient, collaborate, adapt, versatile). Strictly avoid niche technical jargon or industry-specific terms (e.g., do NOT use "Trojan horse" or "refactoring").
-    - The Examples: For every word, write a creative example sentence specifically tailored to the user's interest in {interests}. The sentence must use the general word in a way that resonates with that interest without making the word itself technical.
+    - The Example: For every word, write a creative example sentence specifically tailored to the user's interest in {interests}.
     - The Goal: The user should learn a word they can use anywhere, but the example should make them smile because it relates to what they love.
     - Quiz: Generate 5 distinct quiz questions based on the selected words (testing definitions, synonyms, or usage).
     - Output: Return ONLY a valid JSON object following the schema below.
